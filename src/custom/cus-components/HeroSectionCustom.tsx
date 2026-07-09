@@ -28,7 +28,7 @@ export default function HeroSectionSpotlight() {
 
       {/* Background Image */}
       <Image
-        src="/images/hero-15.jpg"
+        src="/images/hero- 15.jpg"
         alt="Food background"
         fill
         className="object-cover scale-110"
@@ -64,30 +64,29 @@ export default function HeroSectionSpotlight() {
           >
             {/* Spice Up  
             <br /> */}
-             Pizzeria Milano Segle
+            Samrat Sweets
           </h1>
 
           {/* Subtitle */}
           <p className="text-white/80 text-sm md:text-base mb-8 max-w-lg">
-            From rich curries to sizzling delights — experience food
-            that excites every bite.
+           Manage inventory, production, billing, purchases, accounting, staff and branch operations with one powerful ERP platform built for Business.
           </p>
 
           {/* Buttons */}
           <div className="flex flex-wrap gap-4">
 
             <Link
-              href="/#order_now"
+              href="/admin"
               className="bg-[#ea9244] hover:bg-[#ff7b00] text-white px-7 py-3 rounded-full text-sm font-semibold shadow-xl transition"
             >
-              🍴 Order Now
+             Login
             </Link>
 
             <Link
-              href="/menu"
+              href="/admin"
               className="border border-white/40 text-white px-7 py-3 rounded-full text-sm font-semibold hover:bg-white hover:text-black transition"
             >
-              Explore Menu
+             Login
             </Link>
 
           </div>
