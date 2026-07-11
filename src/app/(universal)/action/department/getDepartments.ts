@@ -13,7 +13,10 @@ export async function getDepartments(): Promise<DepartmentType[]> {
     .get();
 
   snapshot.forEach((doc) => {
-    data.push(doc.data() as DepartmentType);
+    data.push({
+  ...doc.data(),
+  createdAt: doc.data().createdAt?.toMillis?.() ?? null,
+} as DepartmentType);
   });
 
   return data;
