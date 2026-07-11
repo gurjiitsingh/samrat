@@ -1,13 +1,7 @@
 "use server";
 
-import admin from "firebase-admin";
 import { adminDb } from "@/lib/firebaseAdmin";
-import { revalidatePath, revalidateTag } from "next/cache";
-import { applyFinishedTransactions } from "./finishedStockLedger/applyFinishedTransactions";
-import { applyInventoryMovement } from "../inventory/applyInventoryMovement";
 import { InventoryUnit } from "@/lib/types/InventoryItemType";
-import { processSaleInventory } from "../inventory/processSaleInventory";
-import { processRawInventory } from "../inventory/processRawInventory";
 import { applyRawInventoryWrites } from "../inventory/rawInventory/applyRawInventoryWrites";
 import { validateRawStock } from "../inventory/rawInventory/validateRawStock";
 import { getRawInventoryData } from "../inventory/rawInventory/getRawInventoryData";
@@ -15,23 +9,20 @@ import { getRawInventoryData } from "../inventory/rawInventory/getRawInventoryDa
 import { getStockLocation } from "../distribution/getStockLocation";
 import { addStockLocationTx } from "../distribution/addStockLocation";
 import { addStockMovement } from "../distribution/addStockMovement";
+import { applyFinishedTransactionsRead } from "../stock-finished/finishedStockLedger/applyFinishedTransactionsRead";
+import { applyFinishedTransactionsWrite } from "../stock-finished/finishedStockLedger/applyFinishedTransactionsWrite";
+import { getProductionBatchById } from "./getProductionBatchById";
+
 
 
 type AdjustStockType = {
   id: string;
+  batchId: string;
   productName: string;
-  sellingPrice:  number;
-  wholesalePrice:  number;
-  type:  
-  | "PURCHASE"
-  | "OPENING_STOCK"
-  | "ADJUSTMENT"
-  | "WASTAGE"
-  // | "SUPPLIER_RETURN"
-  | "PURCHASE_RETURN"
-  | "CUSTOMER_RETURN";
-  costPrice:  number;
-  avgCost:  number;
+  sellingPrice: number;
+  wholesalePrice: number;
+  costPrice: number;
+  avgCost: number;
   direction: "IN" | "OUT";
   quantity: number;
   transactionUnit: InventoryUnit;
@@ -39,27 +30,28 @@ type AdjustStockType = {
   createdBy?: string;
 };
 
-export async function adjustFinishedItemStock({
+export async function stockProductionManual({
   id,
+  batchId,
   productName,
   sellingPrice,
   wholesalePrice,
   costPrice,
-  avgCost,
+  //avgCost,
   direction,
-  type,
+
   quantity,
   transactionUnit,
   note,
   createdBy,
 }: AdjustStockType) {
   const db = adminDb;
- 
+
   try {
     if (!id) {
       return { success: false, message: "Product ID required" };
     }
- 
+
     if (!quantity || quantity <= 0) {
       return { success: false, message: "Invalid quantity" };
     }
@@ -70,112 +62,155 @@ export async function adjustFinishedItemStock({
       // =========================
       // ✅ 1. READ
       // =========================
-      let rawUpdates: any[] = [];
 
-      if (direction === "IN") {
-        rawUpdates = await getRawInventoryData(tx, [
-          { productId: id, quantity }
-        ]);
+
+      const batchRes = await getProductionBatchById(batchId);
+
+      if (!batchRes.success) {
+        throw new Error("Batch not found");
       }
 
+      const batchData = batchRes.data;
 
+      console.log("batch--------------", batchData)
+
+
+
+      // 🔥 total raw cost (already correct)
+      const totalRawCost = batchData!.calculatedTotalCost;
+
+      if (!quantity || quantity <= 0) {
+        throw new Error("Finished quantity must be greater than 0");
+      }
+
+      const avgCostPerUnit = totalRawCost / quantity;
+      console.log("avgCostPerUnit----------------", avgCostPerUnit, totalRawCost, quantity)
       //=============================
       // READ STOCK LOCATION
       //=============================
 
-      const factoryLocation = await getStockLocation({
+      // const factoryLocation = await getStockLocation({
+      //   tx,
+      //   productId: id,
+      //   locationType: "FACTORY",
+      //   locationRef: "MAIN",
+      // });
+
+      const storeLocation = await getStockLocation({
         tx,
         productId: id,
-        locationType: "FACTORY",
+        locationType: "STORE",
         locationRef: "MAIN",
       });
 
       // =========================
       // ✅ 2. VALIDATE
       // =========================
-      if (direction === "IN") {
-        validateRawStock(rawUpdates);
-      }
+
+
+      // 1 ✅ Read stock (finished currentStock)
+      const finishedData = await applyFinishedTransactionsRead(tx, id);
 
       // =========================
       // ✅ 3. WRITE
       // =========================
+      // 1  Decrease department stock
+
+// await updateDepartmentStock({
+//   departmentId,
+//   inventoryItemId,
+//   qtyChange: -usedQty,
+// });
+
+
+      // 2 ✅ Update Batch
+
+
+      tx.update(
+        db.collection("production_batches").doc(batchId),
+        {
+          outputQty: quantity,              // ✅ finished goods qty
+          avgCostPerUnit: avgCostPerUnit,   // ✅ calculated cost
+          totalCost: totalRawCost,          // (keep consistent)
+          status: "CLOSED",                 // ✅ mark done
+          endTime: new Date(),
+
+        }
+      );
+
+
+
       // 1 ✅ Update stock (finished currentStock)
       // 2 ✅ Create ledger entry (stockLedgerFinished transactions)
-      const movement = await applyFinishedTransactions(tx, {
+      // 2. Update finished product
+      await applyFinishedTransactionsWrite(tx, {
         productId: id,
+        batchId: batchId,
         productName,
         type: "PRODUCTION",
         direction,
         quantity,
-        unitPrice: 0,
         transactionUnit,
+
+        unitPrice: 0,
+        totalAmount: 0,
         note,
-        createdBy: createdBy || "system",
+        createdBy,
         source: "ADMIN",
+
+        readResult: finishedData,
       });
 
-
-      // 1 ✅ Update stock (inventroy currentStock)
-      // 2 ✅ Create ledger entry (stockLedgerInventory transactions)
-
-
-      if (direction === "IN") {
-        await applyRawInventoryWrites(
-          tx,
-          rawUpdates,
-          "production-" + id
-        );
-      }
 
 
       // =========================
       // ✅ Update Factory Location
       // =========================
       if (direction === "IN") {
+
         await addStockLocationTx({
           tx,
-          stockLocation: factoryLocation,
+          stockLocation: storeLocation,
 
           productId: id,
           productName,
           sellingPrice,
           wholesalePrice,
           costPrice,
-          avgCost,
+          avgCost: avgCostPerUnit,
           productMode: "finished_stock",
 
-          locationType: "FACTORY",
+          locationType: "STORE",
           locationRef: "MAIN",
 
           quantity,
         });
       }
 
-  await addStockMovement({ 
-          tx,
+      await addStockMovement({
+        tx,
 
-          movementType: "TRANSFER",
+        movementType: "TRANSFER",
+        batchId: batchId,
+        productId: id,
+        productName,
+        name: "FACTORY",
+        locationCode: "NA",
+        responsiblePerson: "ADMIN",
+        //productMode: row.factory.productMode,
 
-          productId: id,
-          productName,
-          name: "FACTORY",
-          locationCode:"NA",
-          responsiblePerson:"ADMIN",
-          //productMode: row.factory.productMode,
+        quantity,
 
-          quantity,
+        fromLocationType: "FACTORY",
+        fromLocationRef: "MAIN",
 
-          fromLocationType: "FACTORY",
-          fromLocationRef: "MAIN",
+        toLocationType: "STOCK",
+        toLocationRef: "NA",
 
-          toLocationType: "STOCK",
-          toLocationRef: "NA",
+        remarks: "NA",
 
-          remarks:"NA",
-
-          createdBy,
-        });
+        createdBy,
+      });
 
 
 

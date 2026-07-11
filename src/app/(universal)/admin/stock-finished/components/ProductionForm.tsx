@@ -11,6 +11,7 @@ import { updateFinishedItemStock } from "@/app/(universal)/action/stock-finished
 import { InventoryUnit } from "@/lib/types/InventoryItemType";
 import { ProductStockType } from "@/lib/types/productStockType";
 import toast from "react-hot-toast";
+import Link from "next/link";
 type Props = {
   products: ProductStockType[];
 };
@@ -81,6 +82,7 @@ export default function ProductionForm({
     try {
       const result = await updateFinishedItemStock({
         id: data.id,
+        batchId: "fromUpdate",
         productName: selectedProduct.name,
         sellingPrice: selectedProduct.sellingPrice,
         wholesalePrice: selectedProduct.wholesalePrice!,
@@ -124,15 +126,35 @@ export default function ProductionForm({
     <div className="min-h-screen bg-[#f6f8fb] p-4 md:p-6">
       <div className="max-w-3xl">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-800">
-            Produce Finished Goods
-          </h1>
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-800">
+                Produce Finished Goods
+              </h1>
+              <p className="mt-1 text-sm text-gray-500">
+                Record production and increase finished stock.
+              </p>
+            </div>
 
-          <p className="text-sm text-gray-500 mt-1">
-            Record production and increase finished stock.
-          </p>
+            <div className="flex flex-wrap items-center gap-3">
+              <Link
+                href="/admin/stock-finished/issue/add"
+                className="inline-flex h-11 items-center justify-center rounded-xl bg-red-600 px-5 font-medium text-white shadow-sm transition hover:bg-red-700"
+              >
+                Manual Production
+              </Link>
+
+              <Link
+                href="/admin/stock-finished/issue"
+                className="inline-flex h-11 items-center justify-center rounded-xl border border-red-200 bg-white px-5 font-medium text-red-600 shadow-sm transition hover:bg-red-50"
+              >
+                Production Batches
+              </Link>
+            </div>
+          </div>
+
+
         </div>
-
         <form
           onSubmit={handleSubmit(onSubmit)}
           className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 flex flex-col gap-5"

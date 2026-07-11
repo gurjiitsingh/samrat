@@ -52,7 +52,7 @@ export default function InventoryTabs() {
 );
   const isProduction =
     pathname ===
-    "/admin/stock-finished/production";
+    "/admin/stock-finished/issue";
 
   const isSale = pathname.startsWith(
     "/admin/stock-finished/sale"
@@ -79,7 +79,7 @@ export default function InventoryTabs() {
   );
 
   const isEstimate =
-  pathname === "/admin/stock-finished/estimate";
+  pathname === "/admin/stock-finished/department";
 
   return (
     <div className="  p-2 pt-5 md:px-6">
@@ -92,7 +92,7 @@ export default function InventoryTabs() {
         <div className="grid grid-cols-2 xl:grid-cols-9 gap-3">
 
           <Link
-            href="/admin/stock-finished/production"
+            href="/admin/stock-finished/issue"
             className={`group rounded-3xl border shadow-sm p-5 transition ${isProduction
                 ? "bg-purple-50 border-purple-300 shadow-md"
                 : "bg-white border-gray-100 hover:border-[#00897b]/30 hover:shadow-md"
@@ -129,9 +129,53 @@ export default function InventoryTabs() {
                   : "text-gray-500"
                 }`}
             >
-              Produce Finished Goods
+              Bathes & Cost
             </p>
           </Link>
+
+          <Link
+  href="/admin/stock-finished/department"
+  className={`group rounded-3xl border shadow-sm p-5 transition ${
+    isEstimate
+      ? "bg-cyan-50 border-cyan-300 shadow-md"
+      : "bg-white border-gray-100 hover:border-cyan-300 hover:shadow-md"
+  }`}
+>
+  <div
+    className={`h-12 w-12 rounded-2xl flex items-center justify-center ${
+      isEstimate ? "bg-cyan-600" : "bg-cyan-100"
+    }`}
+  >
+    <ChartColumn
+      size={22}
+      className={
+        isEstimate
+          ? "text-white"
+          : "text-cyan-600"
+      }
+    />
+  </div>
+
+  <h3
+    className={`font-semibold mt-4 ${
+      isEstimate
+        ? "text-cyan-700"
+        : "text-gray-800"
+    }`}
+  >
+    Departments
+  </h3>
+
+  <p
+    className={`text-sm mt-1 ${
+      isEstimate
+        ? "text-cyan-600"
+        : "text-gray-500"
+    }`}
+  >
+   track Stock & Employees  
+  </p>
+</Link>
 
 
 
@@ -398,49 +442,7 @@ export default function InventoryTabs() {
 
 
 
-<Link
-  href="/admin/stock-finished/estimate"
-  className={`group rounded-3xl border shadow-sm p-5 transition ${
-    isEstimate
-      ? "bg-cyan-50 border-cyan-300 shadow-md"
-      : "bg-white border-gray-100 hover:border-cyan-300 hover:shadow-md"
-  }`}
->
-  <div
-    className={`h-12 w-12 rounded-2xl flex items-center justify-center ${
-      isEstimate ? "bg-cyan-600" : "bg-cyan-100"
-    }`}
-  >
-    <ChartColumn
-      size={22}
-      className={
-        isEstimate
-          ? "text-white"
-          : "text-cyan-600"
-      }
-    />
-  </div>
 
-  <h3
-    className={`font-semibold mt-4 ${
-      isEstimate
-        ? "text-cyan-700"
-        : "text-gray-800"
-    }`}
-  >
-    Production Estimate
-  </h3>
-
-  <p
-    className={`text-sm mt-1 ${
-      isEstimate
-        ? "text-cyan-600"
-        : "text-gray-500"
-    }`}
-  >
-    Estimate recipe ingredients & production cost
-  </p>
-</Link>
 
 <Link
   href="/admin/stock-finished/account"
