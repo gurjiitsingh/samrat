@@ -20,65 +20,65 @@ const SignIn = () => {
   const [error, setError] = useState("");
 
   async function submitHandler(
-    event: FormEvent<HTMLFormElement>
-  ) {
-    event.preventDefault();
+  event: FormEvent<HTMLFormElement>
+) {
+  event.preventDefault();
 
-    setError("");
+  setError("");
 
-    const formData = new FormData(
-      event.currentTarget
-    );
+  const formData = new FormData(
+    event.currentTarget
+  );
 
-    const email = formData.get(
-      "email"
-    ) as string;
+  const email = formData.get(
+    "email"
+  ) as string;
 
-    const password = formData.get(
-      "password"
-    ) as string;
+  const password = formData.get(
+    "password"
+  ) as string;
 
-    const res = await signIn(
-      "credentials",
-      {
-        email,
-        password,
-        redirect: false,
-      }
-    );
-
-    if (res?.error) {
-      setError("Invalid email or password");
-      return;
+  const res = await signIn(
+    "credentials",
+    {
+      email,
+      password,
+      redirect: false,
     }
+  );
 
-    // Read the newly created NextAuth session
-    const session = await getSession();
-
-    console.log("SESSION:", session);
-
-    switch (session?.user?.role) {
-      case "admin":
-        window.location.href = "/admin";
-        break;
-
-      case "driver":
-        window.location.href = "/driver";
-        break;
-
-      case "chef":
-        window.location.href = "/chef";
-        break;
-
-      case "storeKeeper":
-        window.location.href = "/storeKeeper";
-        break;
-
-      default:
-        window.location.href = "/";
-        break;
-    }
+  if (res?.error) {
+    setError("Invalid email or password");
+    return;
   }
+
+  // Read the newly created NextAuth session
+  const session = await getSession();
+
+  console.log("SESSION:", session);
+
+  switch (session?.user?.role) {
+    case "admin":
+      window.location.href = "/admin";
+      break;
+
+    case "driver":
+      window.location.href = "/driver";
+      break;
+
+    case "chef":
+      window.location.href = "/chef";
+      break;
+
+    case "storeKeeper":
+      window.location.href = "/storeKeeper";
+      break;
+
+    default:
+      window.location.href = "/";
+      break;
+  }
+}
 
   return (
     <section className="relative min-h-screen overflow-hidden">
@@ -106,8 +106,7 @@ const SignIn = () => {
       <div className="absolute bottom-24 right-20 h-72 w-72 rounded-full bg-yellow-500/20 blur-3xl" />
 
       {/* Main Content */}
-      <div className="relative z-10 mx-auto flex min-h-screen max-w-7xl flex-col items-center justify-between gap-12 px-6 py-10 lg:flex-row lg:px-12">
-        {/* Left Side */}
+     <div className="relative z-10 mx-auto flex min-h-screen max-w-7xl flex-col-reverse items-center justify-between gap-12 px-6 py-10 lg:flex-row lg:px-12">       {/* Left Side */}
         <div className="max-w-2xl pt-20 text-white lg:pt-0">
           {/* Badge */}
           <div className="mb-5 flex items-center gap-2 text-sm font-medium text-amber-400">
@@ -119,7 +118,7 @@ const SignIn = () => {
           <h1 className="mb-6 text-5xl font-black leading-tight md:text-7xl">
             Manage Your
             <span className="block text-amber-400">
-              Business
+                Business
             </span>
             Smarter
           </h1>
@@ -136,97 +135,97 @@ const SignIn = () => {
           </p>
 
           {/* Features */}
-          <div className="mb-10 flex flex-wrap gap-6 text-sm text-white/90">
+      <div className="mb-10 flex flex-wrap gap-6 text-sm text-white/90">
 
-            <div className="flex items-center gap-2">
-              <FaBoxOpen className="text-amber-400" />
-              Inventory Management
-            </div>
+  <div className="flex items-center gap-2">
+    <FaBoxOpen className="text-amber-400" />
+    Inventory Management
+  </div>
 
-            <div className="flex items-center gap-2">
-              <FaReceipt className="text-amber-400" />
-              Billing & Sales
-            </div>
+  <div className="flex items-center gap-2">
+    <FaReceipt className="text-amber-400" />
+    Billing & Sales
+  </div>
 
-            {/* <div className="flex items-center gap-2">
+  {/* <div className="flex items-center gap-2">
     <FaStore className="text-amber-400" />
     Multi Branch Support
   </div> */}
 
-            <div className="flex items-center gap-2">
-              <FaChartLine className="text-amber-400" />
-              Business Analytics
-            </div>
+  <div className="flex items-center gap-2">
+    <FaChartLine className="text-amber-400" />
+    Business Analytics
+  </div>
 
-            <div className="flex items-center gap-2">
-              🍮 Recipe Management
-            </div>
+  <div className="flex items-center gap-2">
+    🍮 Recipe Management
+  </div>
 
-            <div className="flex items-center gap-2">
-              🧾 Production Planning
-            </div>
+  <div className="flex items-center gap-2">
+    🧾 Production Planning
+  </div>
 
-            <div className="flex items-center gap-2">
-              🏭 Manufacturing Tracking
-            </div>
+  <div className="flex items-center gap-2">
+    🏭 Manufacturing Tracking
+  </div>
 
-            <div className="flex items-center gap-2">
-              📦 Raw Material Management
-            </div>
+  <div className="flex items-center gap-2">
+    📦 Raw Material Management
+  </div>
 
-            {/* <div className="flex items-center gap-2">
+  {/* <div className="flex items-center gap-2">
     ⚖️ Batch & Lot Tracking
   </div> */}
 
-            <div className="flex items-center gap-2">
-              🛒 Purchase Management
-            </div>
+  <div className="flex items-center gap-2">
+    🛒 Purchase Management
+  </div>
 
-            <div className="flex items-center gap-2">
-              🚚 Supplier Management
-            </div>
+  <div className="flex items-center gap-2">
+    🚚 Supplier Management
+  </div>
 
-            <div className="flex items-center gap-2">
-              👨‍🍳 Production Costing
-            </div>
+  <div className="flex items-center gap-2">
+    👨‍🍳 Production Costing
+  </div>
 
-            {/* <div className="flex items-center gap-2">
+  {/* <div className="flex items-center gap-2">
     📅 Expiry Management
   </div> */}
 
-            <div className="flex items-center gap-2">
-              👥 Staff Management
-            </div>
+  <div className="flex items-center gap-2">
+    👥 Staff Management
+  </div>
 
-            <div className="flex items-center gap-2">
-              💰 Expense Tracking
-            </div>
+  <div className="flex items-center gap-2">
+    💰 Expense Tracking
+  </div>
 
-            <div className="flex items-center gap-2">
-              📈 Profit & Loss Reports
-            </div>
+  <div className="flex items-center gap-2">
+    📈 Profit & Loss Reports
+  </div>
 
-            <div className="flex items-center gap-2">
-              💳 GST & Tax Management
-            </div>
+  <div className="flex items-center gap-2">
+    💳 GST & Tax Management
+  </div>
 
-            <div className="flex items-center gap-2">
-              📱 POS Integration
-            </div>
+  <div className="flex items-center gap-2">
+    📱 POS Integration
+  </div>
 
-            <div className="flex items-center gap-2">
-              🎁 Customer Loyalty Program
-            </div>
+  <div className="flex items-center gap-2">
+    🎁 Customer Loyalty Program
+  </div>
 
-            <div className="flex items-center gap-2">
-              📲 WhatsApp Notifications
-            </div>
+  <div className="flex items-center gap-2">
+    📲 WhatsApp Notifications
+  </div>
 
-            <div className="flex items-center gap-2">
-              🔐 Role Based Access Control
-            </div>
+  <div className="flex items-center gap-2">
+    🔐 Role Based Access Control
+  </div>
 
-          </div>
+</div>
 
           {/* Buttons */}
           <div className="flex flex-wrap gap-4">

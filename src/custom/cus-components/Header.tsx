@@ -44,14 +44,14 @@ const Header = () => {
     >
       <div className="max-w-7xl mx-auto py-2 px-4 sm:px-6 lg:px-12  flex items-center justify-between">
         <div className="">
-          {/* <button
+          <button
             onClick={() => bargerMenuToggle(false)}
             className="lg:hidden p-2 rounded-md header-toggle-hover"
             aria-label="Toggle menu"
-          > */}
+          >
             <FaBars size={28} />
-          {/* </button> */}
-          {/* <Navbar /> */}
+          </button>
+          <Navbar />
         </div>
 
         <div className="flex items-center gap-3">
