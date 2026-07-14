@@ -84,58 +84,7 @@ const primaryMapping =
         </select>
       </TableCell>
 
-      {/* <TableCell>
-        <select
-          className="border rounded-md px-2 py-1"
-          value={editData.purchaseUnit}
-          onChange={(e) =>
-            setEditData({
-              ...editData,
-              purchaseUnit: e.target.value as InventoryUnit,
-            })
-          }
-        >
-          {Object.values(InventoryUnit).map((u) => (
-            <option key={u} value={u}>
-              {u}
-            </option>
-          ))}
-        </select>
-      </TableCell> */}
-
-      {/* <TableCell>
-        <select
-          className="border rounded-md px-2 py-1"
-          value={editData.consumptionUnit}
-          onChange={(e) =>
-            setEditData({
-              ...editData,
-              consumptionUnit: e.target.value as InventoryUnit,
-            })
-          }
-        >
-          {Object.values(InventoryUnit).map((u) => (
-            <option key={u} value={u}>
-              {u}
-            </option>
-          ))}
-        </select>
-      </TableCell> */}
-
-      {/* <TableCell>
-        <input
-          type="number"
-          className="border rounded-md px-2 py-1 w-20"
-          value={editData.conversionFactor}
-          onChange={(e) =>
-            setEditData({
-              ...editData,
-              conversionFactor: Number(e.target.value),
-            })
-          }
-        />
-      </TableCell> */}
-
+  
       <TableCell>
         <input
           type="number"
