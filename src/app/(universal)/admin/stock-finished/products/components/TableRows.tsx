@@ -218,7 +218,7 @@ const [showModifierModal, setShowModifierModal] = useState(false);
       {/* ⚙️ Actions */}
       <TableCell>
         <div className="flex gap-2">
-       <Button
+       {/* <Button
   size="sm"
   className="
     h-8
@@ -233,11 +233,11 @@ const [showModifierModal, setShowModifierModal] = useState(false);
   onClick={() => setShowModifierModal(true)}
 >
   Modifiers
-</Button>
+</Button> */}
           {/* ✏️ Edit */}
              <Link
             href={{
-              pathname: "/admin/products/editform",
+              pathname: "/admin/stock-finished/products/editform",
               query: { id: product.id },
             }}
           >
@@ -259,7 +259,7 @@ const [showModifierModal, setShowModifierModal] = useState(false);
 </Link>
 
           {/* 🧩 Variants */}
-              <Link
+              {/* <Link
   href={{
     pathname: "/admin/product-variant",
     query: {
@@ -287,7 +287,7 @@ const [showModifierModal, setShowModifierModal] = useState(false);
 >
   {TEXT.button_variants || "Variants"}
 </Button>
-</Link>
+</Link> */}
 
           {/* 🗑 Delete */}
       <Button

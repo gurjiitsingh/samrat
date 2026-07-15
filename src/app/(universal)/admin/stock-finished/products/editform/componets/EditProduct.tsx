@@ -144,7 +144,7 @@ if (result?.errors) {
 
 toast.success("Product updated successfully");
 
-router.push(`/admin/products?productId=${data.id}`);
+router.push(`/admin/stock-finished/products?productId=${data.id}`);
   }
 
   return (
@@ -160,7 +160,7 @@ router.push(`/admin/products?productId=${data.id}`);
           </div>
           <div className="flex gap-2">
             {/* Right Side */}
-            <Link href="/admin/products">
+            <Link href="/admin/stock-finished/products">
               <Button
                 className="
           h-10
@@ -175,7 +175,7 @@ router.push(`/admin/products?productId=${data.id}`);
               </Button>
             </Link>
 
-            <Link href="/admin/products/add">
+            <Link href="/admin/stock-finished/products/add">
               <Button
                 className="
           h-10
