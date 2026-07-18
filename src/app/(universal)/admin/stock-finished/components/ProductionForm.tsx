@@ -1,19 +1,26 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Search, Package2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import {
+  getDepartmentStock,
+ 
+} from "@/app/(universal)/action/production/departments/getDepartmentStock";
 
-import { updateFinishedItemStock } from "@/app/(universal)/action/stock-finished/updateFinshedItemStock";
+import { autoStockProduction  } from "@/app/(universal)/action/stock-finished/autoStockProduction";
 
-import { InventoryUnit } from "@/lib/types/InventoryItemType";
+import { InventoryItemType, InventoryUnit } from "@/lib/types/InventoryItemType";
 import { ProductStockType } from "@/lib/types/productStockType";
 import toast from "react-hot-toast";
 import Link from "next/link";
+import { DepartmentStockType } from "@/lib/types/department/DepartmentStockType";
 type Props = {
   products: ProductStockType[];
+   departments: { id: string; name: string; employeeCount:number,  managerName: string; }[];
+    inventoryItems: InventoryItemType[];
 };
 
 type FormType = {
@@ -25,7 +32,13 @@ type FormType = {
 
 export default function ProductionForm({
   products,
+  departments,
+  inventoryItems,
 }: Props) {
+
+  const [departmentStock, setDepartmentStock] = useState<DepartmentStockType[]>([]);
+    const [departmentId, setDepartmentId] = useState("");
+    const [items, setItems] = useState<any[]>([]);
   const [isSubmitting, setIsSubmitting] =
     useState(false);
 
@@ -80,7 +93,7 @@ export default function ProductionForm({
     setIsSubmitting(true);
 
     try {
-      const result = await updateFinishedItemStock({
+      const result = await autoStockProduction({
         id: data.id,
         batchId: "fromUpdate",
         productName: selectedProduct.name,
@@ -93,6 +106,12 @@ export default function ProductionForm({
         transactionUnit: data.transactionUnit,
         note: data.note,
         createdBy: "admin",
+
+
+        departmentId,
+        departmentName: selectedDepartment?.name || "",
+        managerName: selectedDepartment?.managerName || "",
+        employeeCount: selectedDepartment?.employeeCount || 0,
       });
 
       if (!result.success) {
@@ -122,6 +141,34 @@ export default function ProductionForm({
       setIsSubmitting(false);
     }
   }
+
+
+ const selectedDepartment = departments.find(
+    (d) => d.id === departmentId
+  );
+
+ useEffect(() => {
+    async function loadDepartmentStock() {
+      if (!departmentId) {
+        setDepartmentStock([]);
+        return;
+      }
+
+      try {
+        const stock = await getDepartmentStock(departmentId);
+        setDepartmentStock(stock);
+
+        // Optional: clear previous items
+        setItems([]);
+      } catch (e) {
+        console.error(e);
+        toast.error("Failed to load department stock");
+      }
+    }
+
+    loadDepartmentStock();
+  }, [departmentId]);
+
   return (
     <div className="min-h-screen bg-[#f6f8fb] p-4 md:p-6">
       <div className="max-w-3xl">
@@ -129,25 +176,27 @@ export default function ProductionForm({
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-800">
-                Produce Finished Goods
+                Auto Production
               </h1>
               <p className="mt-1 text-sm text-gray-500">
-                Record production and increase finished stock.
+                Production and inventory record.
               </p>
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
-              <Link
+              {/* <Link
                 href="/admin/stock-finished/issue/add"
-                className="inline-flex h-11 items-center justify-center rounded-xl bg-red-600 px-5 font-medium text-white shadow-sm transition hover:bg-red-700"
-              >
+                className="inline-flex h-11 items-center justify-center rounded-xl border border-red-200 bg-white px-5 font-medium text-red-600 shadow-sm transition hover:bg-red-50"
+       
+                  >
                 Manual Production
-              </Link>
+              </Link> */}
 
               <Link
                 href="/admin/stock-finished/batchs"
-                className="inline-flex h-11 items-center justify-center rounded-xl border border-red-200 bg-white px-5 font-medium text-red-600 shadow-sm transition hover:bg-red-50"
-              >
+                       className="inline-flex h-11 items-center justify-center rounded-xl bg-red-600 px-5 font-medium text-white shadow-sm transition hover:bg-red-700"
+           
+             >
                 Production Batches
               </Link>
             </div>
@@ -159,6 +208,38 @@ export default function ProductionForm({
           onSubmit={handleSubmit(onSubmit)}
           className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 flex flex-col gap-5"
         >
+
+
+
+            <div className="flex gap-3">
+          <div>
+            <label className="text-sm text-gray-600">Department</label>
+            <select
+              value={departmentId}
+              onChange={(e) => setDepartmentId(e.target.value)}
+              className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 bg-white focus:ring-2 focus:ring-blue-500 outline-none"
+            >
+              <option value="">Select Department</option>
+              {departments.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {selectedDepartment && (
+            <div className="mt-6 flex h-[42px] gap-3 items-center justify-between rounded-lg border border-blue-100 bg-blue-50 px-3 text-sm">
+              <span className="text-gray-600">
+                Employee Count
+              </span>
+
+              <span className="font-semibold text-blue-700">
+                {selectedDepartment.employeeCount}
+              </span>
+            </div>
+          )}
+       
           {/* PRODUCT */}
           <div className="flex flex-col gap-2">
             <label className="label-style-4">
@@ -236,6 +317,10 @@ export default function ProductionForm({
               {...register("id")}
             />
           </div>
+
+ </div>
+
+
 
           {/* STOCK */}
           {selectedProduct && (

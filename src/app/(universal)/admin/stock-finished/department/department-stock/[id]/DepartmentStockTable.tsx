@@ -4,19 +4,13 @@ import { useState } from "react";
 import { Search } from "lucide-react";
 import ReturnToDepartmentDialog from "./ReturnToDepartmentDialog";
 import Link from "next/link";
+import { formatQuantity } from "@/utils/inventory/formatQty";
+import { displayStock } from "@/utils/inventory/displayStock";
+import { DepartmentStockType } from "@/lib/types/department/DepartmentStockType";
 
 type Props = {
    departmentName: string; 
-  data: {
-    inventoryItemId: string;
-    inventoryItemName: string;
-    quantity: number;
-    averageCost: number;
-    purchaseUnit: string;
-    consumptionUnit: string;
-    conversionFactor: number;
-    updatedAt: number;
-  }[];
+  data: DepartmentStockType[];
 };
 
 export default function DepartmentStockTable({
@@ -30,6 +24,7 @@ export default function DepartmentStockTable({
       .toLowerCase()
       .includes(search.toLowerCase())
   );
+   
 
     const [returnOpen, setReturnOpen] = useState(false);
 
@@ -120,9 +115,9 @@ const [selectedItem, setSelectedItem] = useState<any>(null);
                 Quantity
               </th>
 
-              <th className="px-4 py-3 font-medium">
+              {/* <th className="px-4 py-3 font-medium">
                 Unit
-              </th>
+              </th> */}
 
               <th className="px-4 py-3 font-medium text-right">
                 Avg Cost
@@ -159,21 +154,36 @@ const [selectedItem, setSelectedItem] = useState<any>(null);
                 </td>
 
                 <td className="px-4 py-3 text-right font-medium">
-                  {item.quantity.toLocaleString("en-IN")}
+                {/* //  {item.quantity.toLocaleString("en-IN")} */}
+
+   <span className="font-medium">
+ 
+
+     {displayStock(
+                item.quantity!,
+                item.purchaseUnit,
+                item.consumptionUnit,
+                item.conversionFactor
+              )}
+                     
+                      </span>
+
+      
+                  
                 </td>
 
-                <td className="px-4 py-3 text-gray-600">
+                {/* <td className="px-4 py-3 text-gray-600"> 
                   {item.purchaseUnit}
-                </td>
+                </td> */}
 
                 <td className="px-4 py-3 text-right">
                   ₹
-                  {(item.averageCost*item.conversionFactor).toFixed(2)}
+                  {(item.averageCost).toFixed(2)}
                 </td>
 
                 <td className="px-4 py-3 text-right font-semibold text-green-700">
                   ₹
-                  {(item.quantity * item.averageCost*item.conversionFactor).toFixed(
+                  {(item.stockValue!).toFixed(
                     2
                   )}
                 </td>

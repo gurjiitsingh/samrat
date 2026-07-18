@@ -2,21 +2,25 @@
 
 import { adminDb } from "@/lib/firebaseAdmin";
 import { CreateProductionBatchInputType } from "@/lib/types/production/CreateProductionBatchInputType";
-import { getManualRawInventoryData } from "../getManualRawInventoryData";
+ 
 import { departmentStockTransaction } from "./departmentStockTransaction";
-import { updateDepartmentStockTxM } from "./updateDepartmentStockTxM";
-import { applyRawInventoryWritesM } from "../../inventory/rawInventory/applyRawInventoryWritesM";
+ 
+ 
 import { validateDepartmentStock } from "./validateDepartmentStock";
-import { getDepartmentStockDataM } from "./getDepartmentStockDataM";
-import { applyRawInventoryDptReturn } from "../../inventory/rawInventory/applyRawInventoryDptReturn";
+ 
 import { readRawInventoryData } from "../readRawInventoryData";
 import { writeInventoryData_StoreAndDpt } from "../../inventory/rawInventory/writeInventoryData_StoreAndDpt";
 import { applyTransactionInventory_StoreAndDpt } from "../../inventory/rawInventory/applyTransactionInventory_StoreAndDpt";
+import { getDepartmentStockData } from "./getDepartmentStockData";
+import { updateDepartmentStockTx } from "./UpdateDepartmentStockTx";
+import { readRawInventoryDataReturn } from "../readRawInventoryDataReturn";
 
 export async function returnStockToMainStore(
     input: CreateProductionBatchInputType
 ) {
     const db = adminDb;
+
+ //   console.log("input----------------",input)
 
     try {
         if (!input.departmentId) {
@@ -42,20 +46,34 @@ export async function returnStockToMainStore(
             // 1. PREPARE RAW REQUEST
             // ==========================================
 
-            const rawRequest = input.items.map((item) => ({
-                inventoryItemId: item.inventoryItemId,
-                quantity: item.quantity * (item.conversionFactor || 1),
-                averageCostDpt: item.averageCost,
-                purchaseUnitDpt: item.purchaseUnit,
-                conversionFactorUsed: item.conversionFactor || 1,
-            }));
+            const itemsInConsumptionUnit = input.items.map((item) => ({
+  ...item,
+  quantity: item.quantity * (item.conversionFactor || 1),
+}));
+
+   const rawRequest = itemsInConsumptionUnit.map((item) => ({
+  inventoryItemId: item.inventoryItemId,
+  quantity: item.quantity,
+  averageCostDpt: item.averageCost,
+  purchaseUnitDpt: item.purchaseUnit,
+  purchaseUnitCostDpt: item.purchaseUnitCost,
+  conversionFactorUsed: item.conversionFactor || 1,
+}));
+
+            // const rawRequest = input.items.map((item) => ({
+            //     inventoryItemId: item.inventoryItemId,
+            //     quantity: item.quantity *   (item.conversionFactor || 1),
+            //     averageCostDpt: item.averageCost,
+            //     purchaseUnitDpt: item.purchaseUnit,
+            //     conversionFactorUsed: item.conversionFactor || 1,
+            // })); 
 
             // ==========================================
             // 2. READ RAW INVENTORY
             // ==========================================
-            console.log("pt-------------------------1")
+             
             const rawUpdates =
-                await readRawInventoryData(
+                await readRawInventoryDataReturn(
                     tx,
                     "IN",
                     rawRequest,
@@ -65,29 +83,30 @@ export async function returnStockToMainStore(
             // ==========================================
             // 3. READ DEPARTMENT STOCK
             // ==========================================
-            console.log("pt-------------------------2")
-            const departmentUpdates =
-                await getDepartmentStockDataM(
+           
+            const departmentRecord =
+                await getDepartmentStockData(
                     tx,
                     input.departmentId,
-                    input.items
+                    "OUT",
+                      itemsInConsumptionUnit
                 );
-
+console.log("Dpt stock returned -----------------------",departmentRecord)
             // ==========================================
             // 4. VALIDATE RAW STOCK
             // ==========================================
 
-            validateDepartmentStock(departmentUpdates);
+            validateDepartmentStock(departmentRecord);
 
             // ==========================================
             // 5. WRITE DEPARTMENT STOCK
             // ==========================================
-            console.log("pt-------------------------3")
-            for (const update of departmentUpdates) {
-                await updateDepartmentStockTxM({
+            
+            for (const update of departmentRecord) {
+                await updateDepartmentStockTx({ 
                     transaction: tx,
                     update,
-                    qtyChange: -update.transferQuantity,
+                 
                 });
             }
 
@@ -136,31 +155,33 @@ export async function returnStockToMainStore(
                 });
             }
 
-            // ==========================================
-            // 7. Update RAW INVENTORY
-            // ==========================================
-            console.log("pt-------------------------4")
-            await writeInventoryData_StoreAndDpt(
-                tx,
-                rawUpdates,
-                transferId,
-                "IN"
-            );
+          // ==========================================
+      // 7. WRITE INVENTORY STOCK
+      // ==========================================
 
 
-            // ==========================================
-            // 7. WRITE RAW INVENTORY
-            // ==========================================
-            console.log("pt-------------------------5")
-            await applyTransactionInventory_StoreAndDpt(
-                tx,
-                rawUpdates,
-                transferId,
-                "DPT RETURN",
-                "IN"
-            );
+      await writeInventoryData_StoreAndDpt(
+        tx,
+        rawUpdates,
+        transferId,
+        "IN"
+      );
 
-            console.log("pt-------------------------6")
+
+          // ==========================================
+      // 7. WRITE INVENTORY LEDGER 
+      // ==========================================
+      //UPDATE: stockLedgerInventory
+      await applyTransactionInventory_StoreAndDpt(
+        tx,
+        rawUpdates,
+        transferId,
+        "DPT RETURN",
+        "IN"
+      );
+
+         
+
         });
 
         return {

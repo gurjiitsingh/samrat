@@ -1,23 +1,28 @@
 "use server";
 
 import { adminDb } from "@/lib/firebaseAdmin";
+import { RawInventoryUpdate } from "@/lib/types/inventory/RawInventoryUpdateType";
+import { RawInventoryUpdateIssue } from "@/lib/types/inventory/RawInventoryUpdateTypeIssue";
+import { before } from "node:test";
 
-export async function readRawInventoryData(
+export async function readRawInventoryData( 
   tx: FirebaseFirestore.Transaction,
   direction: "IN" | "OUT",
   items: {
     inventoryItemId: string;
     quantity: number;
-    averageCostDpt: number;
-    purchaseUnitDpt: string;
+    averageCostInv: number;
+    purchaseUnitInv: string;
+    purchaseUnitCostInv: number;
     conversionFactorUsed: number;
   }[]
 ) {
-  const updates: any[] = [];
+  const updates: RawInventoryUpdateIssue[] = [];
 
   for (const item of items) {
     const qty = Number(item.quantity) || 0;
 
+  
     if (qty <= 0) continue;
 
     const inventoryRef = adminDb
@@ -30,7 +35,7 @@ export async function readRawInventoryData(
       throw new Error(
         `Inventory not found: ${item.inventoryItemId}`
       );
-    }
+    } 
 
     const data = snap.data()!;
 
@@ -38,6 +43,9 @@ export async function readRawInventoryData(
     const storeStock = Number(data.currentStock) || 0;
     const storeAvgCost = Number(data.averageCost) || 0;
     const storeStockValue = Number(data.stockValue) || 0;
+
+// console.log("send qty --------------------", qty)
+// console.log("befor stock --------------------", data.currentStock)
 
     // ===== Stock Calculation =====
     let afterStock = 0;
@@ -59,14 +67,15 @@ updates.push({
   ref: inventoryRef,
 
   inventoryItemId: item.inventoryItemId,
-  itemName: data.name || "",
+  inventoryItemName: data.name || "",
 
   // ===== Quantity =====
   sendQty:qty, // 🔄 was "quantity"
 
   // ===== Units =====
-  purchaseUnit: item.purchaseUnitDpt, // 🔄 was store purchaseUnit
-
+  purchaseUnitCostInv: item.purchaseUnitCostInv,
+  purchaseUnit: item.purchaseUnitInv, // 🔄 was store purchaseUnit
+transactionUnit: item.purchaseUnitInv,
   consumptionUnit:
     data.consumptionUnit || "gm",
 
@@ -75,9 +84,9 @@ updates.push({
 
   // ===== Cost =====
   storeAvgCost, // 🔄 was "unitCost"
-
+unitCost:storeAvgCost,
   dptAvgCost:
-    Number(item.averageCostDpt) || 0,
+    Number(item.averageCostInv) || 0,
 
   storeStockValue, // 🔄 was "stockValue"
 
@@ -85,8 +94,11 @@ updates.push({
 
   // ===== Stock =====
   storeStock, // 🔄 was "prev"
-
+  currentStock:storeStock,
+  beforeStock: storeStock,  
   afterStock, // 🔄 now calculated earlier (was later)
+  prev: storeStock, 
+  next: afterStock,
 });
   }
 

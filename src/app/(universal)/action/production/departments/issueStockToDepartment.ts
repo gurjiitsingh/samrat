@@ -41,20 +41,23 @@ export async function issueStockToDepartment(
       // 1. PREPARE RAW REQUEST
       // ==========================================
 
-      // const rawRequest = input.items.map((item) => ({
-      //   inventoryItemId: item.inventoryItemId,
-      //   quantity:
-      //     item.quantity *
-      //     (item.conversionFactor || 1),
-      // }));
+      console.log("item-----------------------------------", input.items)
 
-         const rawRequest = input.items.map((item) => ({
-                inventoryItemId: item.inventoryItemId,
-                quantity: item.quantity * (item.conversionFactor || 1),
-                averageCostDpt: item.averageCost,
-                purchaseUnitDpt: item.purchaseUnit,
-                conversionFactorUsed: item.conversionFactor || 1,
-            }));
+const itemsInConsumptionUnit = input.items.map((item) => ({
+  ...item,
+  quantity: item.quantity * (item.conversionFactor || 1),
+}));
+
+  //console.log("purchaseUnitCostInv----------------------")
+
+      const rawRequest = itemsInConsumptionUnit.map((item) => ({
+  inventoryItemId: item.inventoryItemId,
+  quantity: item.quantity,
+  averageCostInv: item.averageCost,
+  purchaseUnitInv: item.purchaseUnit,
+  purchaseUnitCostInv: item.purchaseUnitCost,
+  conversionFactorUsed: item.conversionFactor || 1,
+}));
 
       // ==========================================
       // 2. READ RAW INVENTORY
@@ -65,44 +68,45 @@ export async function issueStockToDepartment(
       //     tx,
       //     rawRequest
       //   );
-
+      
       const rawUpdates =
         await readRawInventoryData(
           tx,
           "OUT",
           rawRequest,
 
-        );
+        ); 
 
 
       // ==========================================
       // 3. READ DEPARTMENT STOCK
       // ==========================================
-
-      const departmentUpdates =
+    
+      const departmentRecord =
         await getDepartmentStockData(
           tx,
           input.departmentId,
-          input.items
+          "IN",
+          itemsInConsumptionUnit
         );
-
+    // console.log("Dpt stock issue -----------------------",departmentRecord)
       // ==========================================
       // 4. VALIDATE RAW STOCK
       // ==========================================
 
       validateRawStock(rawUpdates);
-
+      
       // ==========================================
       // 5. WRITE DEPARTMENT STOCK
       // ==========================================
 
-      for (const update of departmentUpdates) {
-        await updateDepartmentStockTx({
+      for (const update of departmentRecord) {
+        await updateDepartmentStockTx({ 
           transaction: tx,
           update,
         });
       }
-
+      
       // ==========================================
       // 6. WRITE DEPARTMENT LEDGER
       // ==========================================
@@ -145,11 +149,37 @@ export async function issueStockToDepartment(
           createdAt: now,
         });
       }
-
+     
       // ==========================================
-      // 7. WRITE RAW INVENTORY
+      // 7. WRITE INVENTORY STOCK
       // ==========================================
 
+
+      await writeInventoryData_StoreAndDpt(
+        tx,
+        rawUpdates,
+        transferId,
+        "OUT"
+      );
+
+
+       // ==========================================
+      // 7. WRITE INVENTORY LEDGER 
+      // ==========================================
+      //UPDATE: stockLedgerInventory
+      await applyTransactionInventory_StoreAndDpt(
+        tx,
+        rawUpdates,
+        transferId,
+        "STROE TO DPT",
+        "OUT"
+      );
+
+
+
+
+
+      //THIS IS NOT USED 
       // await applyRawInventoryWrites(
       //   tx,
       //   rawUpdates,
@@ -161,22 +191,6 @@ export async function issueStockToDepartment(
       //   "PRODUCTION",
 
       // );
-
-         await writeInventoryData_StoreAndDpt(
-                      tx,
-                      rawUpdates,
-                      transferId,
-                      "OUT"
-                  );
-      
-
-         await applyTransactionInventory_StoreAndDpt(
-                      tx,
-                      rawUpdates,
-                      transferId,
-                      "STROE TO DPT",
-                      "OUT"
-                  );
 
 
     });

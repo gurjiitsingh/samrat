@@ -1,11 +1,12 @@
 "use server";
 
 import { adminDb } from "@/lib/firebaseAdmin";
-import { DepartmentStockUpdate, DepartmentStockUpdateM } from "./getDepartmentStockData";
+import { DepartmentStockUpdate } from "@/lib/types/department/DepartmentStockUpdate";
+ 
 
 interface UpdateDepartmentStockInput {
   transaction: FirebaseFirestore.Transaction;
-  update: DepartmentStockUpdateM;
+  update: DepartmentStockUpdate;
 
   // Actual stock movement:
   // +5 = add 5
@@ -20,22 +21,35 @@ export async function updateDepartmentStockTxM({
 }: UpdateDepartmentStockInput) {
   const db = adminDb;
   const now = new Date();
+  const StockQtyDPT =  (update.currentQuantity);
+    const newQuantity = 
+   StockQtyDPT! + qtyChange;
 
-  const newQuantity =
-    update.currentQuantity + qtyChange;
+const stockValue = update.newStockValue;//StockQtyDPT * update.newAverageCost + qtyChange * update.newAverageCost;
+const newAvgCost = stockValue! / newQuantity;
+
+// console.log("currentQuantity---------------",update.inventoryItemName,":",  StockQtyDPT)
+// console.log("transferQuantity---------------",update.inventoryItemName,":",  update.transferQuantity)
+// console.log("newQuantity---------------",update.inventoryItemName,":",  newQuantity)
+  
+
 
   if (newQuantity < 0) {
     throw new Error(
-      `Insufficient department stock for "${update.inventoryItemName}". Available: ${update.currentQuantity}, Requested: ${Math.abs(
+      `Insufficient department stock for "${update.inventoryItemName}". Available: ${StockQtyDPT}, Requested: ${Math.abs(
         qtyChange
       )}`
     );
   }
 
+ 
+
   if (update.exists && update.ref) {
     tx.update(update.ref, {
       quantity: newQuantity,
-      averageCost: update.averageCost,
+      currentQuantity: newQuantity,
+      averageCost: newAvgCost,
+      stockValue,
       updatedAt: now,
     });
 
@@ -61,7 +75,7 @@ export async function updateDepartmentStockTxM({
 
     quantity: newQuantity,
 
-    averageCost: update.averageCost,
+    averageCost: update.newAverageCost,
 
     purchaseUnit: update.purchaseUnit,
     consumptionUnit: update.consumptionUnit,
