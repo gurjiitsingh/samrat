@@ -1,32 +1,33 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import {
+  getDepartmentStock,
 
- 
+} from "@/app/(universal)/action/production/departments/getDepartmentStock";
+import { manualStockProduction } from "@/app/(universal)/action/production/manualStockProduction";
 import { Plus, Trash2, Package } from "lucide-react";
 import { InventoryItemType } from "@/lib/types/InventoryItemType";
 import toast from "react-hot-toast";
 import Link from "next/link";
- 
-import { returnStockToMainStore } from "@/app/(universal)/action/production/departments/returnStockToMainStore";
-import { useEffect, useState } from "react";
-
-import {
-  getDepartmentStock,
- 
-} from "@/app/(universal)/action/production/departments/getDepartmentStock";
 import { DepartmentStockType } from "@/lib/types/department/DepartmentStockType";
+import { samiManualStockProduction } from "@/app/(universal)/action/production/batch/samiManualStockProduction";
+
 
 type Props = {
-  departments: { id: string; name: string }[];
+  batchId: string;
+  departments: { id: string; name: string; employeeCount: number, managerName: string; }[];
   inventoryItems: InventoryItemType[];
 };
 
-export default function StockReturnForm({
+export default function ProductionBatchForm({
+  batchId,
   departments,
   inventoryItems,
 }: Props) {
 
-
+  const router = useRouter();
   const [departmentStock, setDepartmentStock] = useState<DepartmentStockType[]>([]);
   const [departmentId, setDepartmentId] = useState("");
   const [items, setItems] = useState<any[]>([]);
@@ -50,15 +51,10 @@ export default function StockReturnForm({
         averageCost: 0,     // ✅ ADD THIS
         costPerUnit: 0,     // (derived)
 
-        purchaseMappings: [],
+
       },
     ]);
   };
-
-  const selectedIds = items
-  .map((i) => i.inventoryItemId)
-  .filter(Boolean);
-
   const updateItem = (index: number, field: string, value: any) => {
     const updated = [...items];
     updated[index][field] = value;
@@ -72,29 +68,14 @@ export default function StockReturnForm({
       if (selected) {
         updated[index].inventoryItemName = selected.inventoryItemName;
         updated[index].averageCost = selected.averageCost;
- //updated[index].purchaseUnitCost = selected.purchaseUnitCost;
+
         updated[index].purchaseUnit = selected.purchaseUnit;
         updated[index].consumptionUnit = selected.consumptionUnit;
         updated[index].conversionFactor = selected.conversionFactor;
       }
-
-
     }
 
-    // ✅ When unit changes (👉 ADD/KEEP THIS BLOCK HERE)
-    if (field === "purchaseUnit") {
-      const mapping = updated[index].purchaseMappings.find(
-        (m: any) => m.purchaseUnit === value
-      );
 
-      if (mapping) {
-        updated[index].consumptionUnit =
-          mapping.consumptionUnit;
-
-        // ✅ THIS IS YOUR LINE — PUT HERE
-        updated[index].conversionFactor = mapping.factor;
-      }
-    }
 
     setItems(updated);
   };
@@ -118,24 +99,34 @@ export default function StockReturnForm({
     setLoading(true);
 
     try {
-      const dept = departments.find((d) => d.id === departmentId);
+      const selectedDepartment = departments.find(
+        (d) => d.id === departmentId
+      );
 
-      const res = await returnStockToMainStore({
-        departmentId,
-        departmentName: dept?.name || "",
-        items,
-        note,
-      });
+      const res = await samiManualStockProduction(
+        batchId,
+        {
+          departmentId,
+          departmentName: selectedDepartment?.name ?? "",
+          employeeCount: selectedDepartment?.employeeCount ?? 0,
+          note,
+          items,
+        }
+
+      );
 
       if (!res.success) {
         toast.error(res.message);
         return;
       }
 
-      toast.success("Batch stock qty returned successfully");
+      toast.success("Batch created successfully");
+
       setItems([]);
       setNote("");
       setDepartmentId("");
+
+      router.push("/admin/stock-finished/batchs");
     } catch (err) {
       console.error(err);
       toast.error("An error occurred while creating the batch");
@@ -144,6 +135,9 @@ export default function StockReturnForm({
     }
   };
 
+  const selectedDepartment = departments.find(
+    (d) => d.id === departmentId
+  );
   useEffect(() => {
     async function loadDepartmentStock() {
       if (!departmentId) {
@@ -154,6 +148,9 @@ export default function StockReturnForm({
       try {
         const stock = await getDepartmentStock(departmentId);
         setDepartmentStock(stock);
+
+        // Optional: clear previous items
+        setItems([]);
       } catch (e) {
         console.error(e);
         toast.error("Failed to load department stock");
@@ -164,78 +161,81 @@ export default function StockReturnForm({
   }, [departmentId]);
 
   return (
-    <div className="p-6  max-w-5xl  space-y-6 bg-gray-50 min-h-screen">
+    <div className="p-6 max-w-5xl   space-y-6 bg-gray-50 min-h-screen">
 
       {/* HEADER */}
+      <div className="flex items-center gap-3">
 
 
+      </div>
 
-      <div className="mb-5 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800">
-            Stock Return
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="flex items-center gap-2">
+          <Package className="w-6 h-6 text-blue-600" />
+          <h1 className="text-3xl font-bold text-gray-800">
+            Production Batch
           </h1>
-
-          <p className="text-sm text-gray-500">
-            Transfer stock from a department back to the main store.
+          <p className="mt-1 text-sm text-gray-500">
+            Issue stock.
           </p>
         </div>
-        <div className="flex gap-4">
+
+        <div className="flex flex-wrap items-center gap-3">
+          {/* <Link
+                href="/admin/stock-finished/issue/add"
+                className="inline-flex h-11 items-center justify-center rounded-xl bg-red-600 px-5 font-medium text-white shadow-sm transition hover:bg-red-700"
+              >
+                Manual Production
+              </Link> */}
+
           <Link
-            href="/admin/stock-finished/department/issue-stock/add"
-            className="inline-flex items-center justify-center rounded-xl bg-red-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-[#00796b]"
+            href="/admin/stock-finished/batchs"
+            className="inline-flex h-11 items-center justify-center rounded-xl border border-red-200 bg-white px-5 font-medium text-red-600 shadow-sm transition hover:bg-red-50"
           >
-            Issue Stock
-          </Link>
-          <Link
-            href="/admin/stock-finished/department"
-            className="inline-flex items-center justify-center rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-[#00796b]"
-          >
-            All Departments
-          </Link>
-             <Link
-            href="/admin/stock-finished/department/transactions"
-            className="inline-flex items-center justify-center rounded-xl bg-[#00897b]  px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-[#00796b]"
-          >
-            Transactions
-          </Link>
-          <Link
-            href="/admin/stock-finished/department/add"
-            className="inline-flex items-center justify-center rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-[#00796b]"
-          >
-            + Add Department
+            Production Batches
           </Link>
         </div>
       </div>
 
 
-
-
-
       {/* CARD */}
-      <div className="   border border-gray-200 rounded-xl p-5 space-y-5 shadow-sm">
+      <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-5 shadow-sm">
 
         {/* Department */}
-        <div>
-          <label className="text-sm text-gray-600">Source Department</label>
-          <select
-            value={departmentId}
-            onChange={(e) => setDepartmentId(e.target.value)}
-            className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 bg-white focus:ring-2 focus:ring-blue-500 outline-none"
-          >
-            <option value="">Select Department</option>
-            {departments.map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.name}
-              </option>
-            ))}
-          </select>
+        <div className="flex gap-3">
+          <div>
+            <label className="text-sm text-gray-600">Department</label>
+            <select
+              value={departmentId}
+              onChange={(e) => setDepartmentId(e.target.value)}
+              className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 bg-white focus:ring-2 focus:ring-blue-500 outline-none"
+            >
+              <option value="">Select Department</option>
+              {departments.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {selectedDepartment && (
+            <div className="mt-6 flex h-[42px] gap-3 items-center justify-between rounded-lg border border-blue-100 bg-blue-50 px-3 text-sm">
+              <span className="text-gray-600">
+                Employee Count
+              </span>
+
+              <span className="font-semibold text-blue-700">
+                {selectedDepartment.employeeCount}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* ITEMS */}
         <div className="space-y-3">
           <div className="flex justify-between items-center">
-            <h2 className="font-medium text-gray-700">Items to Return</h2>
+            <h2 className="font-medium text-gray-700">Items</h2>
 
             <button
               onClick={addItem}
@@ -261,34 +261,28 @@ export default function StockReturnForm({
                 key={index}
                 className="grid grid-cols-5 gap-2 px-3 py-2 border-t items-center"
               >
-              <select
-  value={item.inventoryItemId}
-  className="border border-gray-300 rounded-md px-2 py-1 bg-white"
-  onChange={(e) =>
-    updateItem(index, "inventoryItemId", e.target.value)
-  }
->
-  <option value="">Select</option>
+                <select
+                  value={item.inventoryItemId}
+                  className="border border-gray-300 rounded-md px-2 py-1 bg-white"
+                  onChange={(e) =>
+                    updateItem(index, "inventoryItemId", e.target.value)
+                  }
+                >
+                  <option value="">Select</option>
 
-  {inventoryItems.map((i) => {
-    const alreadySelected =
-      selectedIds.includes(i.id) &&
-      item.inventoryItemId !== i.id; // allow current row
-
-    return (
-      <option
-        key={i.id}
-        value={i.id}
-        disabled={alreadySelected}
-      >
-        {i.name}
-      </option>
-    );
-  })}
-</select>
+                  {departmentStock.map((i) => (
+                    <option
+                      key={i.inventoryItemId}
+                      value={i.inventoryItemId}
+                    >
+                      {i.inventoryItemName} ({i.quantity} {i.purchaseUnit})
+                    </option>
+                  ))}
+                </select>
 
                 <input
                   type="number"
+                  value={item.quantity}
                   placeholder="0"
                   className="border border-gray-300 rounded-md px-2 py-1"
                   onChange={(e) =>
@@ -345,7 +339,7 @@ export default function StockReturnForm({
           disabled={loading}
           className="w-full bg-red-600 text-white py-2.5 rounded-lg hover:bg-red-700 transition font-medium"
         >
-          {loading ? "Processing Return…" : "Return Stock"}
+          {loading ? "Creating..." : "Create Batch"}
         </button>
       </div>
     </div>
