@@ -29,7 +29,7 @@ export default async function Page({
 
   return (
     <div className="p-6">
-     <ProductionBatchTable
+      <ProductionBatchTable
   batches={res.data}
   hasNext={res.hasNext}
   hasPrev={res.hasPrev}
