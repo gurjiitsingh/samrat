@@ -248,12 +248,13 @@ const filteredTransactions = useMemo(() => {
                   </TableCell>
 
                   <TableCell>
-                    {displayStock(
+                    {tx.quantity} {" "}{tx.purchaseUnit}
+                    {/* {displayStock(
                       tx.quantity,
                       tx.purchaseUnit,
                       tx.consumptionUnit,
                       tx.conversionFactor
-                    )}
+                    )} */}
                   </TableCell>
 
                   <TableCell>
