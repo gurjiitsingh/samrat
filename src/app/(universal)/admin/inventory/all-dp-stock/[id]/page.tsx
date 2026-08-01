@@ -39,12 +39,12 @@ export default async function Page({
     );
   }
 
-  const itemName =
+  const itemName =   
     result.data[0]?.inventoryItemName ||
     inventoryResult.data?.name ||
     'Inventory Item';
 
-    console.log("inventoryResult.data---------------",inventoryResult)
+ //   console.log("inventoryResult.data---------------",inventoryResult)
 
   return (
     <div className="p-6">

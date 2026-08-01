@@ -14,7 +14,7 @@ message: 'inventoryItemId is required',
 };
 }
 
-//console.log("inside inventory data--------------------------",id)
+console.log("inside fetch inventory data--------------------------",id)
 
 const snap = await adminDb
   .collection('inventoryItems')
@@ -30,7 +30,7 @@ if (!snap.exists) {
 }
 
 const item = snap.data()!;
-console.log("item----------------",item)
+//console.log("item----------------",item)
 
 const invData = {
   success: true,
@@ -58,7 +58,7 @@ const invData = {
   },
   message: 'Inventory item fetched',
 };
-console.log("invData----------------------",invData)
+console.log("invData data fetched----------------------",invData)
 
 return invData;
 

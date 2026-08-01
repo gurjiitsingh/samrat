@@ -275,6 +275,9 @@ return ( <div className="overflow-hidden rounded-2xl border border-gray-100 bg-w
           <th className="px-4 py-3 font-medium text-right">
             Avg Cost
           </th>
+<th className="px-4 py-3 font-medium text-right">
+  Calculated Value
+</th>
 
           <th className="px-4 py-3 font-medium text-right">
             Stock Value
@@ -323,6 +326,23 @@ return ( <div className="overflow-hidden rounded-2xl border border-gray-100 bg-w
       : variancePercent >= 6
       ? 'bg-yellow-100 text-yellow-800 border border-yellow-200'
       : 'text-gray-800';
+
+
+      const calculatedStockValue =
+  (Number(item.currentStock || 0) /
+    Number(item.conversionFactor || 1)) *
+  departmentAvg;
+
+const actualStockValue =
+  Number(item.stockValue || 0);
+
+const stockValueDifference =
+  Math.abs(
+    calculatedStockValue - actualStockValue
+  );
+
+const isStockValueMismatch =
+  stockValueDifference > 1; // allow small rounding difference
 
   return (
 
@@ -380,10 +400,39 @@ return ( <div className="overflow-hidden rounded-2xl border border-gray-100 bg-w
 
         </div>
       </td>
+      <td className="px-4 py-3 text-right">
+  <span
+    className={`font-semibold ${
+      isStockValueMismatch
+        ? 'text-red-700'
+        : 'text-emerald-700'
+    }`}
+  >
+    ₹{calculatedStockValue.toFixed(2)}
+  </span>
+</td>
 
-      <td className="px-4 py-3 text-right font-semibold text-green-700">
-        ₹{Number(item.stockValue).toFixed(2)}
-      </td>
+   <td className="px-4 py-3 text-right">
+  <div className="flex flex-col items-end">
+
+    <span
+      className={`font-semibold ${
+        isStockValueMismatch
+          ? 'text-red-700'
+          : 'text-green-700'
+      }`}
+    >
+      ₹{actualStockValue.toFixed(2)}
+    </span>
+
+    {isStockValueMismatch && (
+      <span className="text-xs text-red-600 font-medium">
+        Mismatch
+      </span>
+    )}
+
+  </div>
+</td>
 
       <td className="px-4 py-3 text-right text-xs text-gray-500">
         {item.updatedAt
