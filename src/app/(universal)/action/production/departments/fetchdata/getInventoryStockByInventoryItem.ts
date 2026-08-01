@@ -14,7 +14,7 @@ message: 'inventoryItemId is required',
 };
 }
 
-console.log("inside inventory data--------------------------",id)
+//console.log("inside inventory data--------------------------",id)
 
 const snap = await adminDb
   .collection('inventoryItems')
@@ -32,7 +32,7 @@ if (!snap.exists) {
 const item = snap.data()!;
 console.log("item----------------",item)
 
-return {
+const invData = {
   success: true,
   data: {
     id: snap.id,
@@ -49,12 +49,18 @@ return {
     purchaseUnitCost: Number(item.purchaseUnitCost || 0),
 
     updatedAt: item.updatedAt
-      ? item.updatedAt.toDate().toISOString()
-      : null,
+  ? typeof item.updatedAt === 'number'
+    ? new Date(item.updatedAt).toISOString()
+    : typeof item.updatedAt.toDate === 'function'
+    ? item.updatedAt.toDate().toISOString()
+    : new Date(item.updatedAt).toISOString()
+  : null,
   },
   message: 'Inventory item fetched',
 };
+console.log("invData----------------------",invData)
 
+return invData;
 
 } catch (error: any) {
 return {
