@@ -2,6 +2,7 @@ import { getDepartmentStockByInventoryItem } from '@/app/(universal)/action/prod
  
 import DepartmentItemStockTable from './DepartmentItemStockTable';
 import { getInventoryStockByInventoryItem } from '@/app/(universal)/action/production/departments/fetchdata/getInventoryStockByInventoryItem';
+import { auditDepartmentStockAgainstBenchmark } from '@/app/(universal)/action/production/departments/fetchdata/auditDepartmentStockAgainstBenchmark';
 
 type Props = {
   params: Promise<{
@@ -18,6 +19,7 @@ export default async function Page({
   // Department stock
   const result =
     await getDepartmentStockByInventoryItem(id);
+    
 
   // Main store stock
   const inventoryResult =
@@ -43,6 +45,14 @@ export default async function Page({
     result.data[0]?.inventoryItemName ||
     inventoryResult.data?.name ||
     'Inventory Item';
+
+//     const result1 =
+//   await auditDepartmentStockAgainstBenchmark({
+//     benchmarkId: '7EvaQ9DKySeuiqYx3wbD',
+//     thresholdPercent: 30,
+//   });
+
+// console.log("conparision----------------------",result1.data);
 
  //   console.log("inventoryResult.data---------------",inventoryResult)
 
