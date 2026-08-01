@@ -35,7 +35,7 @@ export default async function Page({
     <div className="p-6">
       <EditDepartmentStockForm
         stock={stock}
-        purchaseMappings={inventoryResult.data}
+        purchaseMappings={inventoryResult.data ?? []}
       />
     </div>
   );
