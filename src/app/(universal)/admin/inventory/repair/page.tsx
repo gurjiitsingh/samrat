@@ -4,7 +4,7 @@ import { Suspense } from "react";
 
 import Link from "next/link";
 
-import { Plus, Package2, ArrowLeft } from "lucide-react";
+import { Plus, Package2, ArrowLeft, Wrench } from "lucide-react";
 
 
 import ListView from "./ListView";
@@ -58,6 +58,13 @@ export default async function Page() {
                   <button className="btn-save-4 flex items-center gap-2">
                     <Plus size={18} />
                     Add Inventory Item
+                  </button>
+                </Link>
+
+                    <Link href="/admin/inventory/repair/all-department-stockvalue">
+                  <button className="btn-save-4 flex items-center gap-2">
+                    <Wrench size={18} />
+                    Repair
                   </button>
                 </Link>
                
