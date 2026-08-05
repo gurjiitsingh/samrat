@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { syncAverageCostFromPurchaseUnitCost } from "@/app/(universal)/action/inventory/repair/syncAverageCostFromPurchaseUnitCost";
 
- 
+//  copy  averageCost: purchaseUnitCost,
 export default function Page() {
   const [loading, setLoading] = useState(false);
 

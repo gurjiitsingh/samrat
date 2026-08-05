@@ -4,9 +4,10 @@ import { useState, useTransition } from 'react';
 import { Wrench, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { repairAllDepartmentStockValues } from '@/app/(universal)/action/production/departments/repair/repairAllDepartmentStockValues';
+import { repairDepartmentStockValuesUsingOwnCost } from '@/app/(universal)/action/production/departments/repair/repairDepartmentStockValuesUsingOwnCost';
 
 
-export default function RepairDepartmentStockButton() {
+export default function RepairDepartmentStockValueButton() {
   const [isPending, startTransition] =
     useTransition();
 
@@ -22,8 +23,8 @@ export default function RepairDepartmentStockButton() {
 
     startTransition(async () => {
       const res =
-        await repairAllDepartmentStockValues();
-
+       // await repairAllDepartmentStockValues();
+await repairDepartmentStockValuesUsingOwnCost();
       if (!res.success) {
         toast.error(res.message);
         return;

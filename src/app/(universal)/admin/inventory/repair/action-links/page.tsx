@@ -9,6 +9,7 @@ RefreshCw,
 ArrowLeft,
 Receipt,
 } from 'lucide-react';
+import { repairAllInventoryStockValues } from '@/app/(universal)/action/inventory/repair/repairAllInventoryStockValues';
 
 export default function Page() {
 return ( <div className="min-h-screen bg-gray-50 p-6"> <div className="mx-auto max-w-4xl space-y-6">
@@ -37,9 +38,13 @@ return ( <div className="min-h-screen bg-gray-50 p-6"> <div className="mx-auto m
     {/* Tools */}
     <div className="grid gap-4 md:grid-cols-2">
 
+
+         {/*  Updating ALL department AvageCost with inventory AvageCost */}
+   
+
       {/* Repair department stock values */}
       <Link
-        href="/admin/inventory/repair/all-department-stockvalue"
+        href="/admin/inventory/repair/all-dp-stockvalue"
         className="rounded-2xl border bg-white p-5 shadow-sm transition hover:shadow-md"
       >
         <div className="flex items-start gap-4">
@@ -62,9 +67,8 @@ return ( <div className="min-h-screen bg-gray-50 p-6"> <div className="mx-auto m
         </div>
       </Link>
 
-      {/* Update department prices */}
       <Link
-        href="/admin/repair/update-department-prices"
+        href="/admin/inventory/repair/dpprice"
         className="rounded-2xl border bg-white p-5 shadow-sm transition hover:shadow-md"
       >
         <div className="flex items-start gap-4">
@@ -87,7 +91,40 @@ return ( <div className="min-h-screen bg-gray-50 p-6"> <div className="mx-auto m
         </div>
       </Link>
 
-      {/* Sync average cost */}
+      
+      {/* NEW: Update inventory Stock Value */}
+<button
+  onClick={async () => {
+    if (!confirm('Repair all inventory stock values?')) return;
+
+    try {
+      const res = await repairAllInventoryStockValues();
+      alert(res.message);
+    } catch (err: any) {
+      alert(err.message);
+    }
+  }}
+  className="w-full text-left rounded-2xl border bg-white p-5 shadow-sm transition hover:shadow-md"
+>
+  <div className="flex items-start gap-4">
+    <div className="rounded-xl bg-purple-100 p-3">
+      <Receipt className="text-purple-700" size={24} />
+    </div>
+
+    <div>
+      <h2 className="font-semibold text-gray-800">
+        Update Inventory Stock value
+      </h2>
+
+      <p className="mt-1 text-sm text-gray-500">
+        Edit inventory and recalculate stock value.
+      </p>
+    </div>
+  </div>
+</button>
+
+            {/* Sync average cost */}
+        {/* Copy inventory purchaseUnitCost into averageCost  */}
       <Link
         href="/admin/inventory/repair/copyavg"
         className="rounded-2xl border bg-white p-5 shadow-sm transition hover:shadow-md"
@@ -99,7 +136,7 @@ return ( <div className="min-h-screen bg-gray-50 p-6"> <div className="mx-auto m
               size={24}
             />
           </div>
-   {/* Copy purchaseUnitCost into averageCost and costPrice. */}
+   
           <div>
             <h2 className="font-semibold text-gray-800">
               Sync Inventory Average Cost
@@ -112,33 +149,9 @@ return ( <div className="min-h-screen bg-gray-50 p-6"> <div className="mx-auto m
         </div>
       </Link>
 
-      {/* NEW: Update inventory average cost */}
-      <Link
-        href="/admin/repair/update-inventory-average-cost"
-        className="rounded-2xl border bg-white p-5 shadow-sm transition hover:shadow-md"
-      >
-        <div className="flex items-start gap-4">
-          <div className="rounded-xl bg-purple-100 p-3">
-            <Receipt
-              className="text-purple-700"
-              size={24}
-            />
-          </div>
-
-          <div>
-            <h2 className="font-semibold text-gray-800">
-              Update Inventory Average Cost
-            </h2>
-
-            <p className="mt-1 text-sm text-gray-500">
-              Edit inventory average cost and recalculate stock value.
-            </p>
-          </div>
-        </div>
-      </Link>
 
       {/* Placeholder */}
-      <Link
+      {/* <Link
         href="/admin/repair"
         className="rounded-2xl border bg-white p-5 shadow-sm transition hover:shadow-md md:col-span-2"
       >
@@ -160,7 +173,7 @@ return ( <div className="min-h-screen bg-gray-50 p-6"> <div className="mx-auto m
             </p>
           </div>
         </div>
-      </Link>
+      </Link> */}
 
     </div>
   </div>

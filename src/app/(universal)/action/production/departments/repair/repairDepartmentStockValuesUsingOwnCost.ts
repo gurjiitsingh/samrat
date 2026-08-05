@@ -1,8 +1,9 @@
 'use server';
 
 import { adminDb } from '@/lib/firebaseAdmin';
+import { FieldValue } from 'firebase-admin/firestore';
 
-export async function repairAllDepartmentStockValues() {
+export async function repairDepartmentStockValuesUsingOwnCost() {
   try {
     const snapshot = await adminDb
       .collection('departmentStock')
@@ -12,55 +13,65 @@ export async function repairAllDepartmentStockValues() {
       return {
         success: true,
         updated: 0,
-        message: 'No department stock records found.',
+        skipped: 0,
+        message: 'No department stock found.',
       };
     }
 
     const bulkWriter = adminDb.bulkWriter();
 
-    let updatedCount = 0;
-    let skippedCount = 0;
+    let updated = 0;
+    let skipped = 0;
 
     for (const doc of snapshot.docs) {
       const data = doc.data();
 
       const currentStock = Number(data.currentStock || 0);
-      const averageCost = Number(data.averageCost || 0);
       const conversionFactor = Number(data.conversionFactor || 1);
+      const averageCost = Number(data.averageCost || 0);
 
+      // ✅ calculate stock value
       const qtyInPurchaseUnit =
         currentStock / conversionFactor;
 
-      const stockValue =
+      const newStockValue =
         qtyInPurchaseUnit * averageCost;
 
-      // ✅ Skip if already correct (SAVE WRITES 💰)
-      if (Number(data.stockValue || 0) === stockValue) {
-        skippedCount++;
+      const oldStockValue =
+        Number(data.stockValue || 0);
+
+      // 💰 skip unchanged
+      if (oldStockValue === newStockValue) {
+        skipped++;
         continue;
       }
 
       bulkWriter.update(doc.ref, {
-        stockValue,
-        updatedAt: new Date(),
+        stockValue: newStockValue,
+        updatedAt: FieldValue.serverTimestamp(),
       });
 
-      updatedCount++;
+      updated++;
     }
+
+    bulkWriter.onWriteError((error) => {
+      console.error('Write failed:', error);
+      return true;
+    });
 
     await bulkWriter.close();
 
     return {
       success: true,
-      updated: updatedCount,
-      skipped: skippedCount,
-      message: `Updated ${updatedCount}, Skipped ${skippedCount} records.`,
+      updated,
+      skipped,
+      message: `Updated ${updated}, Skipped ${skipped} department stock records.`,
     };
-
   } catch (error: any) {
     return {
       success: false,
       updated: 0,
+      skipped: 0,
       message:
         error.message ||
         'Failed to repair department stock values.',

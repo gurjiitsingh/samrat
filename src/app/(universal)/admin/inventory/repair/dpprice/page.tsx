@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { updateAllDepartmentAverageCosts } from "@/app/(universal)/action/production/departments/priceUpdte/updateDepartmentAverageCostForInventoryItem";
 
- 
+    // " Updating ALL department AvageCost with inventory AvageCost"
 export default function Page() {
   const [inventoryItemId, setInventoryItemId] =
     useState("EZWrGmvKAn14tZAITIN3");

@@ -1,18 +1,20 @@
 'use server';
 
 import { adminDb } from '@/lib/firebaseAdmin';
+import { FieldValue } from 'firebase-admin/firestore';
 
-export async function repairAllDepartmentStockValues() {
+export async function repairAllInventoryStockValues() {
   try {
     const snapshot = await adminDb
-      .collection('departmentStock')
+      .collection('inventoryItems')
       .get();
 
     if (snapshot.empty) {
       return {
         success: true,
         updated: 0,
-        message: 'No department stock records found.',
+        skipped: 0,
+        message: 'No inventory items found.',
       };
     }
 
@@ -31,22 +33,39 @@ export async function repairAllDepartmentStockValues() {
       const qtyInPurchaseUnit =
         currentStock / conversionFactor;
 
-      const stockValue =
+      // ✅ FIX: Round to 2 decimal places
+      const rawStockValue =
         qtyInPurchaseUnit * averageCost;
 
-      // ✅ Skip if already correct (SAVE WRITES 💰)
-      if (Number(data.stockValue || 0) === stockValue) {
+      const stockValue = Number(
+        rawStockValue.toFixed(2)
+      );
+
+      const oldStockValue = Number(
+        data.stockValue || 0
+      );
+
+      // ✅ Compare rounded values
+      if (
+        Number(oldStockValue.toFixed(2)) ===
+        stockValue
+      ) {
         skippedCount++;
         continue;
       }
 
       bulkWriter.update(doc.ref, {
         stockValue,
-        updatedAt: new Date(),
+        updatedAt: FieldValue.serverTimestamp(),
       });
 
       updatedCount++;
     }
+
+    bulkWriter.onWriteError((error) => {
+      console.error('Inventory write failed:', error);
+      return true;
+    });
 
     await bulkWriter.close();
 
@@ -54,16 +73,16 @@ export async function repairAllDepartmentStockValues() {
       success: true,
       updated: updatedCount,
       skipped: skippedCount,
-      message: `Updated ${updatedCount}, Skipped ${skippedCount} records.`,
+      message: `Updated ${updatedCount}, Skipped ${skippedCount} inventory items.`,
     };
-
   } catch (error: any) {
     return {
       success: false,
       updated: 0,
+      skipped: 0,
       message:
         error.message ||
-        'Failed to repair department stock values.',
+        'Failed to repair inventory stock values.',
     };
   }
 }
