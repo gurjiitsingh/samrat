@@ -8,10 +8,10 @@ export type AddStockMovementProps = {
   tx: Transaction;
 
   movementType:
-    | 'TRANSFER'
-    | 'SALE'
-    | 'RETURN'
-    | 'ADJUSTMENT';
+  | 'TRANSFER'
+  | 'SALE'
+  | 'RETURN'
+  | 'ADJUSTMENT';
 
   productId: string;
   batchId: string;
@@ -19,7 +19,9 @@ export type AddStockMovementProps = {
 
   customerId?: string;
   customerName?: string;
-vehicleId?:string;
+  vehicleId?: string;
+  tripId: string;
+  tripNo: string;
   locationCode: string;
   responsiblePerson: string;
   quantity: number;
@@ -42,11 +44,13 @@ export async function addStockMovement({
 
   productId,
   batchId,
+  tripId,
+  tripNo,
   productName,
 
   customerName,
   customerId,
-vehicleId,
+  vehicleId,
   locationCode,
   responsiblePerson,
   quantity,
@@ -66,21 +70,21 @@ vehicleId,
     .collection('stockMovements')
     .doc();
 
- console.log("add--------------------------------",vehicleId)
+
 
   // YYYY-MM-DD (India timezone optional)
-const now = new Date();
+  const now = new Date();
 
-// India date string: YYYY-MM-DD
-const movementDate = new Intl.DateTimeFormat(
-  'en-CA',
-  {
-    timeZone: 'Asia/Kolkata',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }
-).format(now);
+  // India date string: YYYY-MM-DD
+  const movementDate = new Intl.DateTimeFormat(
+    'en-CA',
+    {
+      timeZone: 'Asia/Kolkata',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }
+  ).format(now);
 
   tx.set(ref, {
     id: ref.id,
@@ -89,11 +93,13 @@ const movementDate = new Intl.DateTimeFormat(
 
     productId,
     batchId,
+    tripId,
+    tripNo,
     productName,
 
     customerName: customerName || '',
     customerId: customerId || '',
-vehicleId,
+    vehicleId,
     locationCode,
     responsiblePerson,
     quantity,
@@ -113,7 +119,7 @@ vehicleId,
     movementDate,
 
     // Keep timestamp for exact time
-     createdAt:
-    admin.firestore.FieldValue.serverTimestamp(),
+    createdAt:
+      admin.firestore.FieldValue.serverTimestamp(),
   });
 }
