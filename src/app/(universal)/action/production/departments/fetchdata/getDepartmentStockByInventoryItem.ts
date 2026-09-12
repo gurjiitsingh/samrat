@@ -13,7 +13,7 @@ data: [],
 message: 'inventoryItemId is required',
 };
 }
-console.log("inventoryItemId-------------------",inventoryItemId)
+//console.log("inventoryItemId-------------------",inventoryItemId)
 
 // Get all department stock rows for the item
 const stockSnap = await adminDb
