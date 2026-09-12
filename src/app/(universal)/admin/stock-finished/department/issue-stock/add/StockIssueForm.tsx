@@ -18,7 +18,7 @@ export default function StockIssueForm({
   inventoryItems,
 }: Props) {
 
-
+  console.log("inventoryItems---------------------------------", inventoryItems)
 
   const [departmentId, setDepartmentId] = useState("");
   const [items, setItems] = useState<any[]>([]);
@@ -72,21 +72,14 @@ export default function StockIssueForm({
           selected.averageCost || 0;
 
         // KEEP THIS
-        updated[index].purchaseMappings =
-          selected.purchaseMappings || [];
+        updated[index].purchaseMappings = selected.purchaseMappings || [];
 
-        const firstUnit = selected.purchaseMappings?.[0];
+        updated[index].purchaseUnit = selected.purchaseUnit;
 
-        if (firstUnit) {
-          updated[index].purchaseUnit =
-            firstUnit.purchaseUnit;
+        updated[index].consumptionUnit = selected.consumptionUnit;
 
-          updated[index].consumptionUnit =
-            firstUnit.consumptionUnit;
+        updated[index].conversionFactor = selected.conversionFactor;
 
-          updated[index].conversionFactor =
-            firstUnit.factor;
-        }
       }
     }
 
@@ -153,6 +146,8 @@ export default function StockIssueForm({
       setLoading(false);
     }
   };
+
+  //console.log("item from db---------------------------",items)
 
   return (
     <div className="p-6 max-w-5xl   space-y-6 bg-gray-50 min-h-screen">
@@ -299,7 +294,7 @@ export default function StockIssueForm({
                   ))}
                 </select> */}
 
-<select
+                {/* <select
   value={item.purchaseUnit}
   onChange={(e) =>
     updateItem(index, "purchaseUnit", e.target.value)
@@ -309,7 +304,13 @@ export default function StockIssueForm({
   <option value={item.purchaseUnit}>
     {item.purchaseUnit}
   </option>
-</select>
+</select> */}
+                <input
+                  type="text"
+                  value={item.purchaseUnit}
+                  readOnly
+                  className="border border-gray-300 rounded-md px-2 py-1 bg-gray-100"
+                />
 
                 {/* <div className="text-xs text-gray-500">
   {item.consumptionUnit}
