@@ -173,14 +173,26 @@ formData.append("taxRate", String(data.taxRate ?? 0));
 
  const goToVariant = () => {
   router.push(
-    `/admin/product-variant?nameBase=${nameBase}&categoryBase=${categoryBase}&id=${parentId}&categoryId=${categoryId}&productCat=${productCat}`
+    `/admin/store-pos/product-variant?nameBase=${nameBase}&categoryBase=${categoryBase}&id=${parentId}&categoryId=${categoryId}&productCat=${productCat}`
   );
 };
 
   return (
-    <div className="flex flex-col gap-3">
-{parentId && (
-      <div className="flex justify-start mb-3">
+    <div className="flex flex-col gap-3 mt-2">
+
+
+   
+    <form
+      onSubmit={handleSubmit(onSubmit, (errors) => {
+    console.log("FORM ERRORS ❌", errors);
+  })}
+      className="w-full max-w-7xl  p-2"
+    >
+      <div className="flex justify-between"><h1 className="text-lg font-semibold mb-4">Create Product Variant</h1>
+      
+      
+      {parentId && (
+      <div className="flex justify-start mb-1 mx-2">
         <button
           onClick={goToVariant}
           className="bg-[#313131] text-sm text-white px-4 py-2 rounded-lg"
@@ -189,15 +201,9 @@ formData.append("taxRate", String(data.taxRate ?? 0));
         </button>
       </div>
     )}
+      
+      </div>
 
-   
-    <form
-      onSubmit={handleSubmit(onSubmit, (errors) => {
-    console.log("FORM ERRORS ❌", errors);
-  })}
-      className="w-full max-w-7xl mx-auto p-5"
-    >
-      <h1 className="text-lg font-semibold mb-4">Create Product Variant</h1>
        <h3 className="text-sm mb-4 font-semibold"> Category: <span className="text-md text-slate-400">{categoryBase}</span></h3>
 
   <h3 className="text-md mb-4 font-semibold">Products:<span className="text-md text-slate-400"> {nameBase}</span> </h3>
