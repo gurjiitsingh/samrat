@@ -15,7 +15,7 @@ const ProductList: React.FC<ProductListProps> = ({ item }) => {
 
   //const total = (parseInt(item.quantity.toString()) * parseFloat(item.price.toString())).toFixed(2);
 const total =
-  ((Number(item.quantity) || 0) * (Number(item.price) || 0)).toFixed(2);
+  ((Number(item.quantity) || 0) * (Number(item.basePrice) || 0)).toFixed(2);
   const total_FORMATED = formatCurrencyNumber(
     Number(total) ?? 0,
     (settings.currency || "EUR") as string,
@@ -23,7 +23,7 @@ const total =
   );
 
   const itemPrice_formated = formatCurrencyNumber(
-    Number(item.price) ?? 0,
+    Number(item.basePrice) ?? 0,
     (settings.currency || "EUR") as string,
     (settings.locale || "de-DE") as string
   );
