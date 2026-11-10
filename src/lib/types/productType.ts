@@ -9,12 +9,25 @@ export type ProductImageType = {
   sortOrder: number;
 };
 
+export type ProductOptionValueType = {
+  id: string;
+  name: string;
+  color?: string;
+  sortOrder: number;
+};
+export type ProductOptionType = {
+  id: string;
+  name: string;
+  values: ProductOptionValueType[];
+};
+
 export type ProductType = {
   id: string;
   name: string;
   price: number;
   quantity: number | null;
-  discountEligible?: boolean;
+  taxCategory: string | null;
+   discountEligible?: boolean;
   discountPrice: number | undefined;
   categoryId: string;
   masterCategoryId?: string;
@@ -25,8 +38,9 @@ export type ProductType = {
   sortOrder: number;
   image: string;
    images?: ProductImageType[];
+   options?: ProductOptionType[];
   isFeatured: boolean;
-favorite:boolean;
+  favorite:boolean;
   flavors?: boolean;
   publishStatus: 'published' | 'draft';
   stockStatus: 'in_stock' | 'out_of_stock';
@@ -36,6 +50,9 @@ favorite:boolean;
   // NEW FIELDS
   taxRate: number | undefined;
   taxType: 'inclusive' | 'exclusive' | undefined;
+
+   taxRate1: number | undefined;
+  taxType1: 'inclusive' | 'exclusive' | undefined;
 
   parentId?: string;
   hasVariants?: boolean;
@@ -79,6 +96,7 @@ export const newProductSchema = z.object({
 
   name: z.string().min(1, { message: "Product name is required" }),
 
+taxCategory: z.string().optional().default("FOOD_GST"),
   price: z
     .union([z.string(), z.number()])
     .refine((val) => {
@@ -251,6 +269,18 @@ export const editProductSchema = z.object({
     ),
 
   taxType: z
+    .enum(["inclusive", "exclusive"])
+    .optional(),
+
+    taxRate1: z
+    .string()
+    .optional()
+    .refine(
+      (value) => !value || /^\d*[.,]?\d*$/.test(value),
+      "Invalid tax rate"
+    ),
+
+  taxType1: z
     .enum(["inclusive", "exclusive"])
     .optional(),
 });
