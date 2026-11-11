@@ -1,3 +1,6 @@
+
+"use server";
+
 export async function createStripeCheckoutSessionInternal({
   orderMasterId,
 }: {
@@ -5,7 +8,7 @@ export async function createStripeCheckoutSessionInternal({
 }) {
   return {
     success: false,
-    error: "Stripe payment is not enabled for this country.",
+    error: "Stripe payment is currently disabled.",
     url: null,
   };
 }

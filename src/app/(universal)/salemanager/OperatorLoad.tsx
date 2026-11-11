@@ -459,7 +459,7 @@ const onSubmit = async (data: LoadVehicleFormType) => {
               <Input
   type="number"
   min={0}
-  // max={item.quantity}
+  //max={item.quantity}
   className="h-8 w-26 border border-slate-200 text-center"
   {...form.register(
     `items.${index}.quantity`,

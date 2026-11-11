@@ -1,10 +1,11 @@
+
 export async function handleStripeWebhook(
   _body: string,
   _signature: string
 ) {
   return {
-    success: false,
+    success: true,
     status: 200,
-    message: "Stripe webhook is not enabled.",
+    message: "Stripe webhook is disabled (dummy handler)",
   };
 }
