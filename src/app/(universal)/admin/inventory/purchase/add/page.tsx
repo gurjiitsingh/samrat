@@ -1,7 +1,7 @@
 // app/admin/inventory/adjust-stock/page.tsx
 
 import { fetchInventoryItems } from "@/app/(universal)/action/inventory/dbOperation";
-import StockPurchaseForm from "../../components/StockPurchaseForm";
+import StockPurchaseForm from "./StockPurchaseForm";
 
 
 import { SupplierType } from "@/lib/types/SupplierType";
