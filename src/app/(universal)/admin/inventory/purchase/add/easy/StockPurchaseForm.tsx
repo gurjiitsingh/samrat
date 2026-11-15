@@ -483,16 +483,16 @@ export default function StockPurchaseForm({
           className="flex flex-col gap-1 w-full"
         >
 
-          <div className="flex flex-col xl:flex-row gap-1 w-full bg-red-300">
+          <div className="flex flex-col xl:flex-row gap-1 w-full">
             <div>
               {/* ===================================================== */}
               {/* INVENTORY SEARCH */}
               {/* ===================================================== */}
 
               <div className="flex flex-col gap-2 w-[270px]">
-                {/* <label className="label-style-4">
+                <label className="label-style-4">
                 Inventory Item
-              </label> */}
+              </label>
 
                 <div className="relative">
 
@@ -578,20 +578,20 @@ export default function StockPurchaseForm({
 
             </div>
 
-            <div className=" flex-[0.45]    flex flex-col gap-5">
+            <div className=" flex-full    flex flex-col gap-5">
 
 
               {/* ===================================================== */}
               {/* TYPE */}
               {/* ===================================================== */}
 
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-5">
+              <div className="grid grid-cols-1 md:grid-cols-6 gap-5">
 
                 {type === "PURCHASE" && (
                   <div className="flex flex-col gap-2">
-                    {/* <label className="label-style-4">
+                    <label className="label-style-4">
                     Supplier
-                  </label> */}
+                  </label>
 
                     <select
                       {...register("supplierId")}
@@ -709,7 +709,21 @@ export default function StockPurchaseForm({
                     placeholder={`Cost per ${transactionUnit}`}
                   />
                 </div>
+     {/* ===================================================== */}
+            {/* SAVE */}
+            {/* ===================================================== */}
 
+            <Button
+              type="submit"
+              disabled={
+                isSubmitting
+              }
+              className="btn-save-4 h-11"
+            >
+              {isSubmitting
+                ? "Saving..."
+                : "Save Stock Purchase"}
+            </Button>
 
               </div>
 
@@ -932,21 +946,7 @@ export default function StockPurchaseForm({
               />
             </div>
 
-            {/* ===================================================== */}
-            {/* SAVE */}
-            {/* ===================================================== */}
-
-            <Button
-              type="submit"
-              disabled={
-                isSubmitting
-              }
-              className="btn-save-4 h-11"
-            >
-              {isSubmitting
-                ? "Saving..."
-                : "Save Stock Purchase"}
-            </Button>
+       
 
           </div>
         </form>
