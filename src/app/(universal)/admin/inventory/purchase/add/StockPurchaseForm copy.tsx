@@ -24,7 +24,7 @@ import { PaymentStatus } from "@/lib/types/PaymentStatus";
 import { displayStock } from "@/utils/inventory/displayStock";
 import { purchaseStock } from "@/app/(universal)/action/inventory/purchaseStock";
 import { PaymentMethodType } from "@/lib/types/distribution/PaymentMethodType";
-import ListView from "./easy/ListView";
+import ListView from "./ListView";
 
 
 
