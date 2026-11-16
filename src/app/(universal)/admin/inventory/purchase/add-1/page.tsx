@@ -1,13 +1,11 @@
 // app/admin/inventory/adjust-stock/page.tsx
 
 import { fetchInventoryItems } from "@/app/(universal)/action/inventory/dbOperation";
- 
+import StockPurchaseForm from "./StockPurchaseForm";
 
 
 import { SupplierType } from "@/lib/types/SupplierType";
 import { fetchInventoryItemSuppliersAll } from "@/app/(universal)/action/inventoryItemSupplier/fetchInventoryItemSuppliersAll";
-import StockPurchaseForm from "./StockPurchaseForm";
-import ListView from "./ListView";
 
 type SupplierMap = Record<string, SupplierType[]>;
 
@@ -33,13 +31,9 @@ export default async function Page() {
   }
 
   return (
-    <>
     <StockPurchaseForm
       inventoryItems={inventoryItems}
        supplierMap={supplierMap}
     />
-
-
-    </>
   );
 }

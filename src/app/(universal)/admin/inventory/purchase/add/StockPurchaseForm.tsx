@@ -5,6 +5,7 @@ import React, {
   useEffect,
   useMemo,
   useState,
+  useRef,
 } from "react";
 
 import { useForm } from "react-hook-form";
@@ -12,7 +13,7 @@ import { useForm } from "react-hook-form";
 import { Search, Package2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
- 
+
 import { SupplierType } from "@/lib/types/SupplierType";
 
 import {
@@ -24,9 +25,11 @@ import { PaymentStatus } from "@/lib/types/PaymentStatus";
 import { displayStock } from "@/utils/inventory/displayStock";
 import { purchaseStock } from "@/app/(universal)/action/inventory/purchaseStock";
 import { PaymentMethodType } from "@/lib/types/distribution/PaymentMethodType";
- 
+import Link from "next/link";
 
- 
+
+
+
 
 type FormType = {
   inventoryItemId: string;
@@ -87,7 +90,7 @@ export default function StockPurchaseForm({
 
 
   const linkedSuppliers = supplierMap[selectedInventory?.id || ""] || [];
-
+  const inventorySearchRef = useRef<HTMLInputElement>(null);
   const {
     register,
     handleSubmit,
@@ -123,7 +126,7 @@ export default function StockPurchaseForm({
   const transactionUnit = watch("transactionUnit", "gm");
 
   const paymentStatus = watch("paymentStatus", "PAID");
-
+  const [activeIndex, setActiveIndex] = useState(0);
   const paidAmount = Number(
     watch("paidAmount", 0)
   );
@@ -224,26 +227,68 @@ export default function StockPurchaseForm({
     setValue,
   ]);
 
+  const selectInventoryItem = (item: typeof inventoryItems[number]) => {
+    setSelectedInventory(item);
+
+    setValue("inventoryItemId", item.id);
+
+    setValue(
+      "transactionUnit",
+      item.purchaseMappings?.[0]?.purchaseUnit ??
+      item.consumptionUnit
+    );
+
+    setSearch(item.name);
+    setShowDropdown(false);
+    setActiveIndex(0);
+  };
+
+
+  // =================================================
+  // SUPPLIER SEARCH
+  // =================================================
+
+  const supplierSearchRef = useRef<HTMLInputElement>(null);
+
+  const [supplierSearch, setSupplierSearch] = useState("");
+
+  const [showSupplierDropdown, setShowSupplierDropdown] =
+    useState(false);
+
+  const [activeSupplierIndex, setActiveSupplierIndex] =
+    useState(0);
+
+  const filteredSuppliers = linkedSuppliers.filter((supplier) =>
+    supplier.companyName
+      ?.toLowerCase()
+      .includes(supplierSearch.toLowerCase())
+  );
   // =====================================================
   // FILTER INVENTORY
   // =====================================================
 
-  const filteredInventory =
-    useMemo(() => {
-      if (!search.trim()) return [];
+// const filteredInventory = useMemo(() => {
+//   const query = search.trim().toLowerCase();
 
-      return inventoryItems
-        .filter((item) =>
-          item.name
-            ?.toLowerCase()
-            .includes(
-              search
-                .trim()
-                .toLowerCase()
-            )
-        )
-        .slice(0, 20);
-    }, [search, inventoryItems]);
+//   if (!query) return inventoryItems;
+
+//   return inventoryItems.filter((item) =>
+//     item.name
+//       ?.toLowerCase()
+//       .split(/\s+/)
+//       .some((word) => word.startsWith(query))
+//   );
+// }, [search, inventoryItems]);
+
+const filteredInventory = useMemo(() => {
+  const query = search.trim().toLowerCase();
+
+  if (!query) return inventoryItems;
+
+  return inventoryItems.filter((item) =>
+    item.name?.toLowerCase().startsWith(query)
+  );
+}, [search, inventoryItems]);
 
   // =====================================================
   // SUBMIT
@@ -326,20 +371,20 @@ export default function StockPurchaseForm({
       Number(data.unitCost);
 
     // Convert purchase unit -> consumption unit
-  const mapping =
-  selectedInventory.purchaseMappings.find(
-    (m) =>
-      m.purchaseUnit ===
-      data.transactionUnit
-  );
+    const mapping =
+      selectedInventory.purchaseMappings.find(
+        (m) =>
+          m.purchaseUnit ===
+          data.transactionUnit
+      );
 
-if (mapping) {
-  finalQuantity =
-    finalQuantity * mapping.factor;
+    if (mapping) {
+      finalQuantity =
+        finalQuantity * mapping.factor;
 
-  finalUnitCost =
-    finalUnitCost / mapping.factor;
-}
+      finalUnitCost =
+        finalUnitCost / mapping.factor;
+    }
 
     if (
       Number(data.paidAmount || 0) >
@@ -382,8 +427,8 @@ if (mapping) {
 
         purchaseUnitCost: originalUnitCost || 1,
 
-       conversionFactor:
-  mapping?.factor || 1,
+        conversionFactor:
+          mapping?.factor || 1,
 
         paymentStatus: data.paymentStatus,
 
@@ -395,6 +440,7 @@ if (mapping) {
 
         createdBy: "admin",
       });
+
       if (result.success) {
         let updatedStock =
           selectedInventory.currentStock;
@@ -417,9 +463,9 @@ if (mapping) {
           inventoryItemId: selectedInventory.id,
 
           quantity: 0,
-     transactionUnit:
-  selectedInventory.purchaseMappings?.[0]?.purchaseUnit ??
-  selectedInventory.consumptionUnit,
+          transactionUnit:
+            selectedInventory.purchaseMappings?.[0]?.purchaseUnit ??
+            selectedInventory.consumptionUnit,
 
           unitCost: 0,
           totalAmount: 0,
@@ -458,7 +504,136 @@ if (mapping) {
   >("RATE");
 
 
-console.log(selectedInventory);
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "F1") {
+        e.preventDefault();
+
+        inventorySearchRef.current?.focus();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
+
+  const handleFieldNavigation = (
+    e: React.KeyboardEvent<HTMLElement>
+  ) => {
+    const target = e.target as HTMLElement;
+
+    // F2 → Focus Inventory Item
+    if (e.key === "F2") {
+      e.preventDefault();
+      inventorySearchRef.current?.focus();
+      return;
+    }
+
+    // F3 → Save Record
+    if (e.key === "F3") {
+      e.preventDefault();
+
+      const form = target.closest("form");
+
+      if (form) {
+        form.requestSubmit();
+      }
+
+      return;
+    }
+
+    // Do not interfere with inventory dropdown navigation
+    if (
+      target === inventorySearchRef.current &&
+      showDropdown
+    ) {
+      return;
+    }
+
+    if (
+      !["ArrowRight", "ArrowLeft", "ArrowDown", "ArrowUp", "Enter"].includes(e.key)
+    ) {
+      return;
+    }
+
+    // Allow normal selection inside textarea
+    if (target.tagName === "TEXTAREA") return;
+
+    e.preventDefault();
+
+    const form = target.closest("form");
+
+    if (!form) return;
+
+    const fields = Array.from(
+      form.querySelectorAll<HTMLElement>(
+        'input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled]), button[type="submit"]:not([disabled])'
+      )
+    ).filter((el) => {
+      return el.offsetWidth > 0 && el.offsetHeight > 0;
+    });
+
+    const currentIndex = fields.indexOf(target);
+
+    if (currentIndex === -1) return;
+
+    const current = target.getBoundingClientRect();
+
+    let nextIndex = -1;
+
+    if (e.key === "ArrowRight" || e.key === "Enter") {
+      nextIndex = currentIndex + 1;
+    }
+
+    if (e.key === "ArrowLeft") {
+      nextIndex = currentIndex - 1;
+    }
+
+    if (e.key === "ArrowDown") {
+      const candidates = fields
+        .map((field, index) => ({
+          index,
+          rect: field.getBoundingClientRect(),
+        }))
+        .filter(({ rect, index }) => {
+          return (
+            index !== currentIndex &&
+            rect.top > current.top + 5 &&
+            rect.left < current.right &&
+            rect.right > current.left
+          );
+        })
+        .sort((a, b) => a.rect.top - b.rect.top);
+
+      nextIndex = candidates[0]?.index ?? -1;
+    }
+
+    if (e.key === "ArrowUp") {
+      const candidates = fields
+        .map((field, index) => ({
+          index,
+          rect: field.getBoundingClientRect(),
+        }))
+        .filter(({ rect, index }) => {
+          return (
+            index !== currentIndex &&
+            rect.bottom < current.top - 5 &&
+            rect.left < current.right &&
+            rect.right > current.left
+          );
+        })
+        .sort((a, b) => b.rect.bottom - a.rect.bottom);
+
+      nextIndex = candidates[0]?.index ?? -1;
+    }
+
+    if (nextIndex >= 0 && nextIndex < fields.length) {
+      fields[nextIndex].focus();
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#f6f8fb] p-4 md:p-6 w-full  ">
@@ -468,484 +643,620 @@ console.log(selectedInventory);
         {/* HEADER */}
         {/* ===================================================== */}
 
-        <div className="mb-6  ">
-          <h1 className="text-3xl font-bold text-gray-800">
+
+        <div className="mb-1  ">
+          <div className="flex justify-between">
+          <h1 className="text-2xl font-bold text-gray-800">
             Purchase
           </h1>
-
-          <p className="text-sm text-gray-500 mt-1">
-            Purchase raw stock
-          </p>
+<Link href={"/admin/inventory/purchase/add-1"}>Classic</Link>
+</div>
         </div>
 
         {/* ===================================================== */}
         {/* FORM */}
         {/* ===================================================== */}
-<div className="flex ga-3"> 
+
+
         <form
-          onSubmit={handleSubmit(
-            onSubmit
-          )}
-          className="flex flex-col xl:flex-row gap-3 w-full"
+          onSubmit={handleSubmit(onSubmit)}
+          onKeyDown={handleFieldNavigation}
+          className="flex flex-col gap-1 w-full"
         >
-          <div className="bg-white flex-[0.45] rounded-3xl border border-gray-100 shadow-sm p-6 flex flex-col gap-5">
-            {/* ===================================================== */}
-            {/* INVENTORY SEARCH */}
-            {/* ===================================================== */}
 
-            <div className="flex flex-col gap-2">
-              <label className="label-style-4">
-                Inventory Item
-              </label>
+          <div className="flex flex-col xl:flex-row gap-1 w-full">
+            <div>
+              {/* ===================================================== */}
+              {/* INVENTORY SEARCH */}
+              {/* ===================================================== */}
 
-              <div className="relative">
+              <div className="flex flex-col gap-2 w-[270px]">
+                <label className="label-style-4">
+                  Inventory Item
+                     <span className="ml-1 font-bold text-red-500">
+                        F1</span>
+                </label>
 
-                {!search.trim() && (
-                  <Search
-                    size={18}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400"
+                <div className="relative">
+
+                  {!search.trim() && (
+                    <Search
+                      size={28}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400"
+                    />
+                  )}
+
+                  <input
+                    ref={inventorySearchRef}
+                    type="text"
+                    value={search}
+                    onFocus={() => {
+                      setSearch("");
+                      setShowDropdown(true);
+                      setActiveIndex(0);
+                    }}
+                    onClick={() => {
+                      setShowDropdown(true);
+                    }}
+                    onChange={(e) => {
+                      setSearch(e.target.value);
+                      setShowDropdown(true);
+                      setActiveIndex(0);
+                    }}
+                    onKeyDown={(e) => {
+                      if (!showDropdown || filteredInventory.length === 0) return;
+
+                      if (e.key === "ArrowDown") {
+                        e.preventDefault();
+                        setActiveIndex((prev) =>
+                          Math.min(prev + 1, filteredInventory.length - 1)
+                        );
+                      }
+
+                      if (e.key === "ArrowUp") {
+                        e.preventDefault();
+                        setActiveIndex((prev) => Math.max(prev - 1, 0));
+                      }
+
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+
+                        const item = filteredInventory[activeIndex];
+
+                        if (item) {
+                          selectInventoryItem(item);
+                        }
+                      }
+                    }}
+                    placeholder="Select or search inventory item..."
+                    className={`input-style-4 pr-4 ${!search.trim() ? "pl-12" : "pl-4"
+                      }`}
                   />
-                )}
 
-                <input
-                  type="text"
-                  value={search}
-                  onChange={(e) => {
-                    setSearch(
-                      e.target.value
-                    );
+                  {/* DROPDOWN */}
 
-                    setShowDropdown(
-                      true
-                    );
-                  }}
-                  placeholder="Search inventory item..."
-                  className={`input-style-4 pr-4 ${!search.trim()
-                    ? "pl-12"
-                    : "pl-4"
-                    }`}
-                />
+                  {showDropdown && filteredInventory.length > 0 && (
+                    <div className="absolute z-50 mt-2 w-full max-h-[64vh] overflow-y-auto rounded-2xl border border-gray-200 bg-white shadow-xl">
 
-                {/* DROPDOWN */}
-
-                {showDropdown &&
-                  filteredInventory.length >
-                  0 && (
-                    <div className="absolute z-50 mt-2 w-full max-h-80 overflow-y-auto rounded-2xl border border-gray-200 bg-white shadow-xl">
-
-                      {filteredInventory.map((item) => (
+                      {filteredInventory.map((item, index) => (
                         <button
                           key={item.id}
                           type="button"
-                          onClick={() => {
-                            setSelectedInventory(item);
-
-                            setValue(
-                              "inventoryItemId",
-                              item.id
-                            );
-
-                            // default transaction unit
-                          setValue(
-  "transactionUnit",
-  item.purchaseMappings?.[0]?.purchaseUnit ??
-    item.consumptionUnit
-);
-
-                            setSearch(item.name);
-
-                            setShowDropdown(false);
-                          }}
-                          className="w-full text-left px-4 py-3 hover:bg-blue-50 border-b border-gray-100 last:border-0"
+                          onMouseEnter={() => setActiveIndex(index)}
+                          onClick={() => selectInventoryItem(item)}
+                          className={`w-full text-left px-4 py-3 border-b border-gray-100 last:border-0 transition-colors ${activeIndex === index
+                            ? "bg-red-50 border-l-4 border-l-red-600"
+                            : "hover:bg-gray-50"
+                            }`}
                         >
                           <div className="font-medium text-gray-800">
                             {item.name}
-                          </div>
-
-                          <div className="text-xs text-gray-400">
-                            Current:{" "}
-                            {item.currentStock}{" "}
-                            {item.consumptionUnit}
                           </div>
                         </button>
                       ))}
                     </div>
                   )}
+                </div>
+
+
               </div>
 
-              <input
-                type="hidden"
-                {...register(
-                  "inventoryItemId"
-                )}
-              />
             </div>
+            <div className="flex flex-col">
+              <div className=" flex-full    flex flex-col gap-5">
 
-            {/* ===================================================== */}
-            {/* CURRENT STOCK */}
-            {/* ===================================================== */}
 
-            {selectedInventory && (
-              <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4 flex items-center justify-between">
+                {/* ===================================================== */}
+                {/* TYPE */}
+                {/* ===================================================== */}
 
-                <div className="flex items-center gap-3">
-                  <div className="h-12 w-12 rounded-xl bg-blue-100 flex items-center justify-center">
-                    <Package2
-                      className="text-blue-600"
-                      size={22}
+                <div className="grid grid-cols-1 md:grid-cols-6 gap-5">
+
+
+                  {type === "PURCHASE" && (
+                    <div className="flex flex-col gap-2">
+                      <label className="label-style-4">
+                        Supplier
+                      </label>
+
+                      <div className="relative">
+
+                        {!supplierSearch.trim() && (
+                          <Search
+                            size={28}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400"
+                          />
+                        )}
+
+                        <input
+                          ref={supplierSearchRef}
+                          type="text"
+                          value={supplierSearch}
+                          onFocus={() => {
+                            setSupplierSearch("");
+                            setShowSupplierDropdown(true);
+                            setActiveSupplierIndex(0);
+                          }}
+                          onClick={() => {
+                            setShowSupplierDropdown(true);
+                          }}
+                          onChange={(e) => {
+                            setSupplierSearch(e.target.value);
+                            setShowSupplierDropdown(true);
+                            setActiveSupplierIndex(0);
+
+                            // Clear previous selection when searching
+                            setValue("supplierId", "", {
+                              shouldDirty: true,
+                              shouldValidate: true,
+                            });
+                          }}
+                          onKeyDown={(e) => {
+                            if (
+                              !showSupplierDropdown ||
+                              filteredSuppliers.length === 0
+                            ) return;
+
+                            if (e.key === "ArrowDown") {
+                              e.preventDefault();
+                              e.stopPropagation();
+
+                              setActiveSupplierIndex((prev) =>
+                                Math.min(prev + 1, filteredSuppliers.length - 1)
+                              );
+                            }
+
+                            if (e.key === "ArrowUp") {
+                              e.preventDefault();
+                              e.stopPropagation();
+
+                              setActiveSupplierIndex((prev) =>
+                                Math.max(prev - 1, 0)
+                              );
+                            }
+
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              e.stopPropagation();
+
+                              const supplier = filteredSuppliers[activeSupplierIndex];
+
+                              if (supplier) {
+                                setValue("supplierId", supplier.id, {
+                                  shouldDirty: true,
+                                  shouldValidate: true,
+                                });
+
+                                setSupplierSearch(supplier.companyName);
+                                setShowSupplierDropdown(false);
+                              }
+                            }
+                          }}
+                          placeholder="Select or search supplier..."
+                          className={`input-style-4 pr-4 ${!supplierSearch.trim() ? "pl-12" : "pl-4"
+                            }`}
+                        />
+
+                        {/* SUPPLIER DROPDOWN */}
+
+                        {showSupplierDropdown && (
+                          <div className="absolute z-50 mt-2 w-full max-h-[64vh] overflow-y-auto rounded-2xl border border-gray-200 bg-white shadow-xl">
+
+                            {filteredSuppliers.length > 0 ? (
+                              filteredSuppliers.map((supplier, index) => (
+                                <button
+                                  key={supplier.id}
+                                  type="button"
+                                  onMouseEnter={() => setActiveSupplierIndex(index)}
+                                  onClick={() => {
+                                    setValue("supplierId", supplier.id, {
+                                      shouldDirty: true,
+                                      shouldValidate: true,
+                                    });
+
+                                    setSupplierSearch(supplier.companyName);
+                                    setShowSupplierDropdown(false);
+                                  }}
+                                  className={`w-full text-left px-4 py-3 border-b border-gray-100 last:border-0 transition-colors ${activeSupplierIndex === index
+                                      ? "bg-red-50 border-l-4 border-l-red-600"
+                                      : "hover:bg-gray-50"
+                                    }`}
+                                >
+                                  <div className="font-medium text-gray-800">
+                                    {supplier.companyName}
+                                  </div>
+                                </button>
+                              ))
+                            ) : (
+                              <div className="px-4 py-3 text-sm text-gray-500">
+                                No suppliers found.
+                              </div>
+                            )}
+
+                          </div>
+                        )}
+
+                      </div>
+                    </div>
+                  )}
+
+
+                  {/* Quantity */}
+                  <div className="flex flex-col gap-2">
+                    <label className="label-style-4">
+                      Quantity
+                    </label>
+
+                    <input
+                      type="number"
+                      step="0.001"
+                      {...register("quantity")}
+                      onFocus={(e) => {
+                        if (e.target.value === "0") {
+                          e.target.value = "";
+                        }
+                      }}
+                      className="input-style-4"
+                      placeholder="0"
                     />
                   </div>
 
-                  <div>
-                    <h3 className="font-semibold text-gray-800">
-                      {
-                        selectedInventory.name
-                      }
-                    </h3>
-
-                    <p className="text-sm text-gray-500">
-                      Current Stock
-                    </p>
-                  </div>
-                </div>
-
-                <div className="text-2xl font-bold text-blue-700">
-<div className="text-2xl font-bold text-blue-700">
-  {displayStock(
-    selectedInventory.currentStock!,
-    selectedInventory.purchaseMappings?.[0]?.purchaseUnit ??
-      selectedInventory.consumptionUnit,
-    selectedInventory.consumptionUnit,
-    selectedInventory.purchaseMappings?.[0]?.factor ?? 1
-  )}
-</div>
-                </div>
-              </div>
-            )}
-
-            {/* ===================================================== */}
-            {/* TYPE */}
-            {/* ===================================================== */}
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-
-              {type === "PURCHASE" && (
-                <div className="flex flex-col gap-2">
-                  <label className="label-style-4">
-                    Supplier
-                  </label>
-
-                  <select
-                    {...register("supplierId")}
-                    className="input-style-4"
-                  >
-                    <option value="">
-                      Select Supplier
-                    </option>
-
-                    {linkedSuppliers.map((supplier) => (
-                      <option key={supplier.id} value={supplier.id}>
-                        {supplier.companyName}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
 
 
-            </div>
-
-
-            {/* ===================================================== */}
-            {/* QUANTITY */}
-            {/* ===================================================== */}
-
-            <div className="rounded-2xl border border-gray-200 p-5 space-y-4">
-
-              <h3 className="font-semibold text-lg">
-                Purchase Details
-              </h3>
-
-              {/* ====================================================== */}
-              {/* PURCHASE DETAILS */}
-              {/* ====================================================== */}
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-                {/* Quantity */}
-                <div className="flex flex-col gap-2">
-                  <label className="label-style-4">
-                    Quantity
-                  </label>
-
-                  <input
-                    type="number"
-                    step="0.001"
-                    {...register("quantity")}
-                    onFocus={(e) => {
-                      if (e.target.value === "0") {
-                        e.target.value = "";
-                      }
-                    }}
-                    className="input-style-4"
-                    placeholder="0"
-                  />
-                </div>
-
-                {/* Unit */}
-                <div className="flex flex-col gap-2">
-                  <label className="label-style-4">
-                    Unit
-                  </label>
-
-      <select
-  {...register("transactionUnit")}
-  className="input-style-4"
->
-{selectedInventory?.purchaseMappings?.map((mapping) => (
-    <option
-      key={mapping.purchaseUnit}
-      value={mapping.purchaseUnit}
-    >
-      {mapping.purchaseUnit}
-    </option>
-  ))}
-
-  {!(
-  selectedInventory?.purchaseMappings?.some(
-    (m) => m.purchaseUnit === selectedInventory.consumptionUnit
-  )
-
-  ) && (
-    <option
-      value={selectedInventory?.consumptionUnit}
-    >
-      {selectedInventory?.consumptionUnit}
-    </option>
-  )}
-</select>
-                </div>
-
-                {/* Total Amount */}
-                <div className="flex flex-col gap-2">
-                  <label className="label-style-4">
-                    Total Amount
-                  </label>
-
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={totalAmount || ""}
-                    onChange={(e) => {
-                      setLastEdited("totalAmount");
-
-                      setValue(
-                        "totalAmount",
-                        Number(e.target.value || 0)
-                      );
-                    }}
-                    className="input-style-4"
-                    placeholder="Invoice Amount"
-                  />
-                </div>
-
-                {/* Unit Cost */}
-                <div className="flex flex-col gap-2">
-                  <label className="label-style-4">
-                    Price per {transactionUnit}
-                  </label>
-
-                  <input
-                    type="number"
-                    step="0.0001"
-                    value={unitCost || ""}
-                    onChange={(e) => {
-                      setLastEdited("unitCost");
-
-                      setValue(
-                        "unitCost",
-                        Number(e.target.value || 0)
-                      );
-                    }}
-                    className="input-style-4"
-                    placeholder={`Cost per ${transactionUnit}`}
-                  />
-                </div>
-
-              </div>
-
-              {/* ====================================================== */}
-              {/* PAYMENT */}
-              {/* ====================================================== */}
-
-              <h3 className="font-semibold text-lg pt-2">
-                Payment
-              </h3>
-
-              <div className="grid md:grid-cols-2 gap-4">
-
-                {/* Payment Status */}
-                <div className="flex flex-col gap-2">
-                  <label className="label-style-4">
-                    Payment Status
-                  </label>
-
-                  <select
-                    {...register("paymentStatus")}
-                    className="input-style-4"
-                  >
-                    <option value="PAID">
-                      Paid
-                    </option>
-
-                    <option value="PARTIAL">
-                      Partial Payment
-                    </option>
-
-                    <option value="CREDIT">
-                      Credit Purchase
-                    </option>
-                  </select>
-                </div>
-
-                {/* Payment Method */}
-                {watch("paymentStatus") !== "CREDIT" && (
+                  {/* Total Amount */}
                   <div className="flex flex-col gap-2">
                     <label className="label-style-4">
-                      Payment Method
+                      Total Amount
+                    </label>
+
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={totalAmount || ""}
+                      onChange={(e) => {
+                        setLastEdited("totalAmount");
+
+                        setValue(
+                          "totalAmount",
+                          Number(e.target.value || 0)
+                        );
+                      }}
+                      className="input-style-4"
+                      placeholder="Invoice Amount"
+                    />
+                  </div>
+
+
+                  {/* ===================================================== */}
+                  {/* SAVE */}
+                  {/* ===================================================== */}
+                  <div className="flex flex-col gap-1">
+                    <label className="label-style-4">
+                      <span className=" font-bold text-red-500">
+                        F3</span>
+                    </label>
+
+                    <Button
+                      type="submit"
+                      disabled={
+                        isSubmitting
+                      }
+                      className="btn-save-4 h-10"
+                    >
+                      {isSubmitting
+                        ? "Saving..."
+                        : "Save Stock Purchase"}
+                    </Button>
+                  </div>
+
+                  {/* Unit */}
+                  <div className="flex flex-col gap-2">
+                    <label className="label-style-4">
+                      Unit
                     </label>
 
                     <select
-                      {...register("paymentMethod")}
+                      {...register("transactionUnit")}
                       className="input-style-4"
                     >
-                      <option value="CASH">
-                        Cash
-                      </option>
+                      {selectedInventory?.purchaseMappings?.map((mapping) => (
+                        <option
+                          key={mapping.purchaseUnit}
+                          value={mapping.purchaseUnit}
+                        >
+                          {mapping.purchaseUnit}
+                        </option>
+                      ))}
 
-                      <option value="UPI">
-                        UPI
-                      </option>
+                      {!(
+                        selectedInventory?.purchaseMappings?.some(
+                          (m) => m.purchaseUnit === selectedInventory.consumptionUnit
+                        )
 
-                      <option value="CARD">
-                        Card
-                      </option>
+                      ) && (
+                          <option
+                            value={selectedInventory?.consumptionUnit}
+                          >
+                            {selectedInventory?.consumptionUnit}
+                          </option>
+                        )}
                     </select>
+                  </div>
+                  {/* Unit Cost */}
+                  <div className="flex flex-col gap-2">
+                    <label className="label-style-4">
+                      Price per {transactionUnit}
+                    </label>
+
+                    <input
+                      type="number"
+                      step="0.0001"
+                      value={unitCost || ""}
+                      onChange={(e) => {
+                        setLastEdited("unitCost");
+
+                        setValue(
+                          "unitCost",
+                          Number(e.target.value || 0)
+                        );
+                      }}
+                      className="input-style-4"
+                      placeholder={`Cost per ${transactionUnit}`}
+                    />
+                  </div>
+
+                </div>
+
+
+                {/* ===================================================== */}
+                {/* QUANTITY */}
+                {/* ===================================================== */}
+
+                <div className="rounded-2xl border border-gray-200 p-5 space-y-4">
+
+
+
+                  {/* ====================================================== */}
+                  {/* PURCHASE DETAILS */}
+                  {/* ====================================================== */}
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+
+
+                  </div>
+
+                  {/* ====================================================== */}
+                  {/* PAYMENT */}
+                  {/* ====================================================== */}
+
+                  <h3 className="font-semibold text-lg pt-2">
+                    Payment
+                  </h3>
+
+                  <div className="grid md:grid-cols-2 gap-4">
+
+                    {/* Payment Status */}
+                    <div className="flex flex-col gap-2">
+                      <label className="label-style-4">
+                        Payment Status
+                      </label>
+
+                      <select
+                        {...register("paymentStatus")}
+                        className="input-style-4"
+                      >
+                        <option value="PAID">
+                          Paid
+                        </option>
+
+                        <option value="PARTIAL">
+                          Partial Payment
+                        </option>
+
+                        <option value="CREDIT">
+                          Credit Purchase
+                        </option>
+                      </select>
+                    </div>
+
+                    {/* Payment Method */}
+                    {watch("paymentStatus") !== "CREDIT" && (
+                      <div className="flex flex-col gap-2">
+                        <label className="label-style-4">
+                          Payment Method
+                        </label>
+
+                        <select
+                          {...register("paymentMethod")}
+                          className="input-style-4"
+                        >
+                          <option value="CASH">
+                            Cash
+                          </option>
+
+                          <option value="UPI">
+                            UPI
+                          </option>
+
+                          <option value="CARD">
+                            Card
+                          </option>
+                        </select>
+                      </div>
+                    )}
+
+                    {/* Paid Amount */}
+                    <div className="flex flex-col gap-2">
+                      <label className="label-style-4">
+                        Paid Amount
+                      </label>
+
+                      <input
+                        type="number"
+                        step="0.01"
+                        disabled={
+                          watch("paymentStatus") ===
+                          "PAID"
+                        }
+                        {...register("paidAmount")}
+                        className="input-style-4"
+                        placeholder="0"
+                      />
+                    </div>
+
+                    {/* Due Amount */}
+                    <div className="flex flex-col gap-2">
+                      <label className="label-style-4">
+                        Due Amount
+                      </label>
+
+                      <input
+                        value={dueAmount.toFixed(2)}
+                        readOnly
+                        className="input-style-4 bg-gray-100"
+                      />
+                    </div>
+
+                  </div>
+
+
+
+                </div>
+
+              </div>
+
+              <div className="bg-white flex-[0.40] rounded-3xl border border-gray-100 shadow-sm p-6 flex flex-col gap-5">
+
+                {/* ====================================================== */}
+                {/* SUMMARY CARD */}
+                {/* ====================================================== */}
+
+                <h3 className="font-semibold text-lg">
+                  Purchase Details
+                </h3>
+
+                {/* ===================================================== */}
+                {/* CURRENT STOCK */}
+                {/* ===================================================== */}
+
+                {selectedInventory && (
+                  <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4 flex items-center justify-between">
+
+                    <div className="flex items-center gap-3">
+                      <div className="h-12 w-12 rounded-xl bg-blue-100 flex items-center justify-center">
+                        <Package2
+                          className="text-blue-600"
+                          size={22}
+                        />
+                      </div>
+
+                      <div>
+                        <h3 className="font-semibold text-gray-800">
+                          {
+                            selectedInventory.name
+                          }
+                        </h3>
+
+                        <p className="text-sm text-gray-500">
+                          Current Stock
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="text-2xl font-bold text-blue-700">
+                      <div className="text-2xl font-bold text-blue-700">
+                        {displayStock(
+                          selectedInventory.currentStock!,
+                          selectedInventory.purchaseMappings?.[0]?.purchaseUnit ??
+                          selectedInventory.consumptionUnit,
+                          selectedInventory.consumptionUnit,
+                          selectedInventory.purchaseMappings?.[0]?.factor ?? 1
+                        )}
+                      </div>
+                    </div>
                   </div>
                 )}
 
-                {/* Paid Amount */}
+                <div className="rounded-xl bg-blue-50 border border-blue-200 p-4 flex justify-between">
+
+                  <div>
+                    <p className="text-sm text-gray-500">
+                      Purchase Amount
+                    </p>
+
+                    <p className="text-2xl font-bold">
+                      ₹ {(Number(totalAmount) || 0).toFixed(2)}
+                    </p>
+                  </div>
+
+                  <div className="text-right">
+                    <p className="text-sm text-gray-500">
+                      Outstanding Amount
+                    </p>
+
+                    <p
+                      className={`text-2xl font-bold ${dueAmount > 0
+                        ? "text-red-600"
+                        : "text-green-600"
+                        }`}
+                    >
+                      ₹ {dueAmount.toFixed(2)}
+                    </p>
+                  </div>
+
+                </div>
+
+                {/* ===================================================== */}
+                {/* NOTE */}
+                {/* ===================================================== */}
+
                 <div className="flex flex-col gap-2">
                   <label className="label-style-4">
-                    Paid Amount
+                    Note
                   </label>
 
-                  <input
-                    type="number"
-                    step="0.01"
-                    disabled={
-                      watch("paymentStatus") ===
-                      "PAID"
-                    }
-                    {...register("paidAmount")}
-                    className="input-style-4"
-                    placeholder="0"
+                  <textarea
+                    {...register("note")}
+                    rows={4}
+                    placeholder="Optional note..."
+                    className="input-style-4 resize-none"
                   />
                 </div>
 
-                {/* Due Amount */}
-                <div className="flex flex-col gap-2">
-                  <label className="label-style-4">
-                    Due Amount
-                  </label>
 
-                  <input
-                    value={dueAmount.toFixed(2)}
-                    readOnly
-                    className="input-style-4 bg-gray-100"
-                  />
-                </div>
 
               </div>
-
-
-
             </div>
 
           </div>
-          <div className="bg-white flex-[0.40] rounded-3xl border border-gray-100 shadow-sm p-6 flex flex-col gap-5">
 
-            {/* ====================================================== */}
-            {/* SUMMARY CARD */}
-            {/* ====================================================== */}
 
-            <div className="rounded-xl bg-blue-50 border border-blue-200 p-4 flex justify-between">
-
-              <div>
-                <p className="text-sm text-gray-500">
-                  Purchase Amount
-                </p>
-
-                <p className="text-2xl font-bold">
-                  ₹ {(Number(totalAmount) || 0).toFixed(2)}
-                </p>
-              </div>
-
-              <div className="text-right">
-                <p className="text-sm text-gray-500">
-                  Outstanding Amount
-                </p>
-
-                <p
-                  className={`text-2xl font-bold ${dueAmount > 0
-                    ? "text-red-600"
-                    : "text-green-600"
-                    }`}
-                >
-                  ₹ {dueAmount.toFixed(2)}
-                </p>
-              </div>
-
-            </div>
-
-            {/* ===================================================== */}
-            {/* NOTE */}
-            {/* ===================================================== */}
-
-            <div className="flex flex-col gap-2">
-              <label className="label-style-4">
-                Note
-              </label>
-
-              <textarea
-                {...register("note")}
-                rows={4}
-                placeholder="Optional note..."
-                className="input-style-4 resize-none"
-              />
-            </div>
-
-            {/* ===================================================== */}
-            {/* SAVE */}
-            {/* ===================================================== */}
-
-            <Button
-              type="submit"
-              disabled={
-                isSubmitting
-              }
-              className="btn-save-4 h-11"
-            >
-              {isSubmitting
-                ? "Saving..."
-                : "Save Stock Purchase"}
-            </Button>
-
-          </div>
         </form>
- 
-</div>
-      </div >
+      </div>
+
+
+
     </div >
   );
 }
