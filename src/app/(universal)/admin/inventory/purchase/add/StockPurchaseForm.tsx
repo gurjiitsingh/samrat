@@ -672,9 +672,9 @@ const filteredInventory = useMemo(() => {
 
               <div className="flex flex-col gap-2 w-[270px]">
                 <label className="label-style-4">
-                  Inventory Item
+                  Inventory Item 
                      <span className="ml-1 font-bold text-red-500">
-                        F1</span>
+                       (F1)</span>
                 </label>
 
                 <div className="relative">
@@ -952,8 +952,9 @@ const filteredInventory = useMemo(() => {
                   {/* ===================================================== */}
                   <div className="flex flex-col gap-1">
                     <label className="label-style-4">
-                      <span className=" font-bold text-red-500">
-                        F3</span>
+                      Save
+                      <span className="ml-1 font-bold text-red-500 ">
+                        (F3)</span>
                     </label>
 
                     <Button
