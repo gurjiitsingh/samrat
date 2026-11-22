@@ -205,7 +205,7 @@ export async function addNewProduct(formData: FormData) {
     // FINAL, SAFE conversion
     const hasVariants = rawHasVariants === "true";
     const type = formData.get("type") as string;
-    const taxCategory = formData.get("taxCategory") as string;
+    const taxCategory = "FOOD_GST";//formData.get("taxCategory") as string;
     const parentId = formData.get("parentId") as string;
     const featured_img = formData.get("isFeatured") === "true";
     const name = formData.get("name") as string;
@@ -226,14 +226,17 @@ export async function addNewProduct(formData: FormData) {
     const taxRateRaw = formData.get("taxRate") as string | null;
     const taxType = formData.get("taxType") as string | null;
     const taxRateRaw1 = formData.get("taxRate1") as string | null;
-    const taxType1 = formData.get("taxType1") as string | null;
+    const taxType1 = 'inclusive';// formData.get("taxType1") as string | null;
     const searchCode = formData.get("searchCode") as string | null;
     const currentStock = currentStockRaw ? parseInt(currentStockRaw, 10) : null;
     const priceF = parseFloat(price.replace(/,/g, ".")) || 0;
     const discountPriceF = parseFloat(discountPrice.replace(/,/g, ".")) || 0;
     const sortOrderN = parseInt(sortOrder || "0", 10);
     const taxRate = taxRateRaw ? parseFloat(taxRateRaw) : null;
-    const taxRate1 = taxRateRaw1 ? parseFloat(taxRateRaw1) : null;
+    const taxRate1 = 5.0;//taxRateRaw1 ? parseFloat(taxRateRaw1) : null;
+
+   
+
     const masterCategoryId = formData.get("masterCategoryId") as string | null;
     const productMode =
       (formData.get("productMode") as string) || "finished_stock";
@@ -254,6 +257,9 @@ export async function addNewProduct(formData: FormData) {
         masterCategoryDoc.data()?.name || "";
     }
     console.log("te------------------------", taxCategory)
+
+ 
+
     const receivedData = {
       name,
       searchCode,
@@ -273,8 +279,10 @@ export async function addNewProduct(formData: FormData) {
       taxRate1,
       taxType1,
     };
-
+  console.log("receivedData------------------", receivedData)
     const result = newProductSchema.safeParse(receivedData);
+
+    console.log("restul------------------", result)
     if (!result.success) {
       const zodErrors: Record<string, string> = {};
       result.error.issues.forEach((issue) => {
@@ -334,7 +342,7 @@ export async function addNewProduct(formData: FormData) {
       createdAt: new Date().toISOString(),
     };
 
-
+console.log("this is data to save-----------------------", data)
 
     //  Save to Firestore
 
