@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
-import CheckoutAddressForm from "./CheckoutAddressForm";
- 
+import CheckoutAddressForm from "@/custom/address/CustomerAddressesPage";
  
  
 
